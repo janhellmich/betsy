@@ -4,15 +4,13 @@ This repository holds all source code for the IEEE Robot of the University of So
 
 ## Coding Practices
 
-* Simplicity is more important than speed
-
-* Reliability and accuracy are more important than speed
-
 * Comment every line of code!!!
 
 * Use the metric units! Don't use english units!
 
 * Indent with 4 spaces
+
+* Place code in desired folder
 
 ## Getting Started
 

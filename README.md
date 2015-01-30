@@ -23,6 +23,10 @@ This repository holds all source code for the IEEE Robot of the University of So
 * Clone the repository into the directory:
 
   ```git clone git@github.com:janhellmich/SouthEastCon2015.git```
+  
+* To get the current code from GitHub pull the repository:
+
+ ```git pull```
 
 * Make frequent commits: 
 

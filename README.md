@@ -23,11 +23,24 @@ This repository holds all source code for the IEEE Robot of the University of So
 * Clone the repository into the directory:
 
   ```git clone git@github.com:janhellmich/SouthEastCon2015.git```
+  
+* To get the current code from GitHub pull the repository:
 
-* Work on Feature Branches (git-flow cheat sheet is found [here](http://danielkummer.github.io/git-flow-cheatsheet/))
+ ```git pull```
 
 * Make frequent commits: 
 
   ```git commit -m'DESCRIPTIVE COMMIT MESSAGE'```
 
+* Once finished with a feature do the following to push to GitHub. Make sure your code is commented, then:
+
+ ```git pull```
+ 
+ ```git add .```
+ 
+ ```git commit -m'DESCRIPTIVE COMMIT MESSAGE'```
+ 
+ ```git push```
+ 
+ 
 

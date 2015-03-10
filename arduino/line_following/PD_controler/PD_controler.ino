@@ -5,27 +5,33 @@
 
 #include <QTRSensors.h>
 
-#define Kp 1                     // Proportional Control Constant
-#define Kd 200                     // Derivative Control Constant. ( Note: Kp < Kd)
+#define KP 0.1                     // Proportional Control Constant
+#define KD 20                     // Derivative Control Constant. ( Note: KP < KD)
 
-#define rightMaxSpeed 110          // Max speed of the robot
-#define leftMaxSpeed 110
-#define rightBaseSpeed 60        // speed of the robot while traveling a straight line
-#define leftBaseSpeed 60
-
+#define RIGHTMAXSPEED 120          // Max speed of the robot
+#define LEFTMAXSPEED 120
+#define BASESPEED 80         // speed of the robot while traveling a straight line
 #define NUM_SENSORS  4             // Number of sensors used to follow a straight line
 #define NUM_POLLING_SENSORS 2      // Number of sensors used to poll for a 90 degree turn
 #define TIMEOUT       2500         // Waits for 2500 us for sensor outputs to go low. If they are not yet low, value is set at 2500
 #define EMITTER_PIN   1            // Emitter is controlled by digital pin 1
 
-#define rightmotorForward 12        // Defined by the MotorShield. Do not use these pins for anything else.
-#define rightmotorBackward 13       // MotorShield
-#define rightMotorPWM 10            // MotorShield
-#define leftmotorForward 8          // MotorShield
-#define leftmotorBackward 11        // MotorShield
-#define leftMotorPWM 9              // MotorShield
+//define constants for motor shield pin assignments
+#define RIGHTMOTORFORWARD 12        // Defined by the MotorShield. Do not use these pins for anything else.
+#define RIGHTMOTORBACKWARD 13       // MotorShield
+#define RIGHTMOTORPWM 10            // MotorShield
+#define LEFTMOTORFORWARD 8          // MotorShield
+#define LEFTMOTORBACKWARD 11        // MotorShield
+#define LEFTMOTORPWM 9              // MotorShield
 
-QTRSensorsRC qtrrc((unsigned char[]) { 3, 4, 5, 6} ,NUM_SENSORS, TIMEOUT, EMITTER_PIN);  // The 4 sensors used for following a straight line are digital pins 3, 4, 5, and 6
+//define constants for motor control
+#define RIGHTMOTOR 1
+#define LEFTMOTOR 0
+#define FWD 1
+#define BWD 0
+
+
+QTRSensorsRC qtrrc((unsigned char[]) { 3, 4, 5, 6, } ,NUM_SENSORS, TIMEOUT, EMITTER_PIN);  // The 4 sensors used for following a straight line are digital pins 3, 4, 5, and 6
 QTRSensorsRC poll((unsigned char[]) { 2, 7} ,NUM_POLLING_SENSORS, TIMEOUT, EMITTER_PIN); // The 2 polling sensors for 90 degree turns are digital pins 2 and 7
 unsigned int sensorValues[NUM_SENSORS];                                                  // An array containing the sensor values for the 4 line following sensors
 unsigned int pollingValues[NUM_POLLING_SENSORS];                                         // An array containing the sensor values for the 2 polling sensors
@@ -69,56 +75,103 @@ void loop()
   
   if ((polling[0] == 1))                            // Check to see if there is a 90 degree turn to the right
   {
-    analogWrite(leftMotorPWM, 0);                                        // Stop both motors for two seconds (for testing purposes to see if we detected the 90 degree turn)
-    analogWrite(rightMotorPWM, 0);
-    //delay(1000);
-    //analogWrite(leftMotorPWM, 250);                                        // Keep right motor stopped, turn left motor for a set amount of time for a 90 degree turn
+    stop_motors();                                    // Keep right motor stopped, turn left motor for a set amount of time for a 90 degree turn
     delay(3000);                                                          // Adjust this value to get the 90 degree turn exact
   }
   if ((polling[1] == 1))                       // Check to see if there is a 90 degree turn to the left
   {
-    analogWrite(leftMotorPWM, 0);                                        // Stop both motors for two seconds (for testing purposes to see if we detected the 90 degree turn)
-    analogWrite(rightMotorPWM, 0);
-    //delay(1000);
-    //analogWrite(rightMotorPWM, 250);                                        // Keep right motor stopped, turn left motor for a set amount of time for a 90 degree turn
+    stop_motors();                                     // Keep right motor stopped, turn left motor for a set amount of time for a 90 degree turn
     delay(3000);                                                          // Adjust this value to get the 90 degree turn exact
   }
-  else                                                                   // If there is no detected line on either polling sensor, continue with the PD Line Following
+                                                                   // If there is no detected line on either polling sensor, continue with the PD Line Following
   {  
     int position = qtrrc.readLine(sensorValues,1,1);                            // Get calibrated readings along with the line position
     int error = position - 1500;                                           // Determine the error from the calculated position
     
-    int motorSpeed = Kp * error + Kd * (error - lastError);                // Adjust motorspeed according to constants Kp and Kd
+    int motorSpeed = KP * error + KD * (error - lastError);                // Adjust motorspeed according to constants KP and KD
     lastError = error;                                                     // Update last error to compare to next error
   
-    rightMotorSpeed = rightBaseSpeed + motorSpeed/10;                         // Update right and left motor speeds by the calculated motor speed
-    leftMotorSpeed = leftBaseSpeed - motorSpeed/10;
+    rightMotorSpeed = BASESPEED + motorSpeed;                         // Update right and left motor speeds by the calculated motor speed
+    leftMotorSpeed = BASESPEED - motorSpeed;
     
-    if (rightMotorSpeed > rightMaxSpeed ) rightMotorSpeed = rightMaxSpeed;   // Prevent the motor from going beyond max speed
-    if (leftMotorSpeed > leftMaxSpeed ) leftMotorSpeed = leftMaxSpeed;       // Prevent the motor from going beyond max speed
+    if (rightMotorSpeed > RIGHTMAXSPEED ) rightMotorSpeed = RIGHTMAXSPEED ;   // Prevent the motor from going beyond max speed
+    if (leftMotorSpeed > LEFTMAXSPEED ) leftMotorSpeed = LEFTMAXSPEED;       // Prevent the motor from going beyond max speed
     if (rightMotorSpeed < 0) rightMotorSpeed = 0;                            // Keep the motor speed positive
-    if (leftMotorSpeed < 0) leftMotorSpeed = 0;                              // Keep the motor speed positive
+    if (leftMotorSpeed < 0) leftMotorSpeed = 0;                              // Keep the motor speed positive                           
   }
   
   {
-    analogWrite(rightMotorPWM, rightMotorSpeed);                            // Send the new calculated motor speeds from the motor controller to the motors
-    analogWrite(leftMotorPWM, leftMotorSpeed);
+    drive_motor(RIGHTMOTOR, FWD, rightMotorSpeed); 
+    drive_motor(LEFTMOTOR, FWD, leftMotorSpeed);    
   }
 }
 /**********************************************************************************/
 void setupMotorshield()
 {
-  pinMode(rightmotorForward, OUTPUT);
-  pinMode(rightmotorBackward, OUTPUT);
-  pinMode(rightMotorPWM, OUTPUT);
-  pinMode(leftmotorForward, OUTPUT);
-  pinMode(leftmotorBackward, OUTPUT);
-  pinMode(leftMotorPWM, OUTPUT);
+  pinMode(RIGHTMOTORFORWARD, OUTPUT);
+  pinMode(RIGHTMOTORBACKWARD, OUTPUT);
+  pinMode(RIGHTMOTORPWM, OUTPUT);
+  pinMode(LEFTMOTORFORWARD, OUTPUT);
+  pinMode(LEFTMOTORBACKWARD, OUTPUT);
+  pinMode(LEFTMOTORPWM, OUTPUT);
   
-  digitalWrite(rightmotorForward, HIGH);
-  digitalWrite(rightmotorBackward, LOW);
-  digitalWrite(leftmotorForward, HIGH);
-  digitalWrite(leftmotorBackward, LOW);
+  digitalWrite(RIGHTMOTORFORWARD, HIGH);
+  digitalWrite(RIGHTMOTORBACKWARD, LOW);
+  digitalWrite(LEFTMOTORFORWARD, HIGH);
+  digitalWrite(LEFTMOTORBACKWARD, LOW);
 }
 
+void drive_motor(boolean motor, boolean dir, int spd)
+{
+  if (motor == RIGHTMOTOR)
+  {
+    if (dir == FWD) //Right motor forward
+    {
+      digitalWrite(RIGHTMOTORFORWARD, HIGH);
+      digitalWrite(RIGHTMOTORBACKWARD, LOW);
+      analogWrite(RIGHTMOTORPWM, spd);                            // Send the new calculated motor speeds from the motor controller to the motors
+      
+    }
+    else if(dir == BWD)//Right motor backwards
+    {
+      digitalWrite(RIGHTMOTORFORWARD, LOW);
+      digitalWrite(RIGHTMOTORBACKWARD, HIGH);
+      analogWrite(RIGHTMOTORPWM, spd);                            // Send the new calculated motor speeds from the motor controller to the motors
+    }
+  }
+  else if(motor == LEFTMOTOR)
+  {
+    if (dir == FWD)//Left motor forwards
+    {
+      digitalWrite(LEFTMOTORFORWARD, HIGH);
+      digitalWrite(LEFTMOTORBACKWARD, LOW);
+      analogWrite(LEFTMOTORPWM, spd);                            // Send the new calculated motor speeds from the motor controller to the motors
+      
+    }
+    else if(dir == BWD)//Right motor backwards
+    {
+      digitalWrite(LEFTMOTORFORWARD, LOW);
+      digitalWrite(LEFTMOTORBACKWARD, HIGH);
+      analogWrite(LEFTMOTORPWM, spd);                            // Send the new calculated motor speeds from the motor controller to the motors
+    }
+  }  
+}
+
+void stop_motors()
+{
+ drive_motor(RIGHTMOTOR, FWD, 0);
+ drive_motor(LEFTMOTOR, FWD, 0);
+}
+
+//void turn(int dir)
+//{
+//  if (dir == RIGHT)
+//  {
+//    drive_motor(RIGHTMOTOR, FWD, BASESPEED);
+//    drive_motor(LEFTMOTOR, BWD, BASESPEED);
+//    
+//    
+//  }
+//    
+//}
 

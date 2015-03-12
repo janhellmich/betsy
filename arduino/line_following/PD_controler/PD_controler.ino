@@ -9,22 +9,24 @@
 #define KD 50                     // Derivative Control Constant. ( Note: KP < KD)
 
 //define Max- and Basespeed
-#define MAXSPEED 120          
-#define BASESPEED 80         
+#define MAXSPEED 100          
+#define BASESPEED 60         
 
 //define line following set-up
-#define NUM_SENSORS  4             // Number of sensors used to follow a straight line
+#define NUM_SENSORS 4             // Number of sensors used to follow a straight line
 #define NUM_POLLING_SENSORS 2      // Number of sensors used to poll for a 90 degree turn
+#define NUM_TURNING_SENSORS 2 
 #define TIMEOUT       2500         // Waits for 2500 us for sensor outputs to go low. If they are not yet low, value is set at 2500
-#define EMITTER_PIN   1            // Emitter is controlled by digital pin 1
+#define EMITTER_PIN   30            // Emitter is controlled by digital pin 1
 
 //define constants for motor shield pin assignments
-#define RIGHTMOTORFORWARD 12        // Defined by the MotorShield. Do not use these pins for anything else.
-#define RIGHTMOTORBACKWARD 13       // MotorShield
-#define RIGHTMOTORPWM 10            // MotorShield
-#define LEFTMOTORFORWARD 8          // MotorShield
-#define LEFTMOTORBACKWARD 11        // MotorShield
-#define LEFTMOTORPWM 9              // MotorShield
+#define STBY 24
+#define RIGHTMOTORFORWARD 23        // Defined by the MotorShield. Do not use these pins for anything else.
+#define RIGHTMOTORBACKWARD 22       // MotorShield
+#define RIGHTMOTORPWM 2            // MotorShield
+#define LEFTMOTORFORWARD 25          // MotorShield
+#define LEFTMOTORBACKWARD 26        // MotorShield
+#define LEFTMOTORPWM 3              // MotorShield
 
 //define constants for motor control
 #define RIGHTMOTOR 1
@@ -35,11 +37,12 @@
 #define LEFT 0
 
 // sensor set-up according to QTR library
-QTRSensorsRC qtrrc((unsigned char[]) { 3, 4, 5, 6, } ,NUM_SENSORS, TIMEOUT, EMITTER_PIN);  // The 4 sensors used for following a straight line are digital pins 3, 4, 5, and 6
-QTRSensorsRC poll((unsigned char[]) { 2, 7} ,NUM_POLLING_SENSORS, TIMEOUT, EMITTER_PIN);   // The 2 polling sensors for 90 degree turns are digital pins 2 and 7
+QTRSensorsRC qtrrc((unsigned char[]) { 33, 34, 35, 36} ,NUM_SENSORS, TIMEOUT, EMITTER_PIN);  // The 4 sensors used for following a straight line are digital pins 3, 4, 5, and 6
+QTRSensorsRC poll((unsigned char[]) {38, 31} ,NUM_POLLING_SENSORS, TIMEOUT, EMITTER_PIN);            // The 2 polling sensors for 90 degree turns are digital pins 2 and 7
+QTRSensorsRC turnIndicator((unsigned char[]) {39, 40} ,NUM_TURNING_SENSORS, TIMEOUT);
 unsigned int sensorValues[NUM_SENSORS];                                                    // An array containing the sensor values for the 4 line following sensors
 unsigned int pollingValues[NUM_POLLING_SENSORS];                                           // An array containing the sensor values for the 2 polling sensors
-boolean polling[2];
+
 
 /********************  SETUP  ***************************************************************************************************************/
 
@@ -60,24 +63,42 @@ void loop()
 {
   // check for upcoming turns
   poll.read(pollingValues);
-  for (unsigned char i = 0; i < (NUM_POLLING_SENSORS); i++)             
+  if ((pollingValues[1] <= 500))                            // Check to see if there is a 90 degree turn to the left
   {
-    if(pollingValues[i] <= 500) polling[i] = 1;                         
-    else polling[i] = 0;                                               
-  }
-  
-  if ((polling[0] == 1))                            // Check to see if there is a 90 degree turn to the right
-  {
-    stop_motors();                                  // turn robot
-    turn(LEFT);
-    delay(3000);                                   
-  }
-  if ((polling[1] == 1))                            // Check to see if there is a 90 degree turn to the left
-  {
-    stop_motors();                                   // turn robot
+    //delay(100);    
+    stop_motors();     // turn robot
+    delay(1000);
+    drive_motor(RIGHTMOTOR, FWD, 50);
+    drive_motor(LEFTMOTOR, FWD, 50);
+    delay(100);
+    stop_motors();
+    poll.read(pollingValues);
+    if ((pollingValues[0] <= 500)) 
+    {
+      drive_motor(LEFTMOTOR, FWD, 70);
+      delay(2000);
+    }                                 // turn robot
     turn(RIGHT);
-    delay(3000);                                        
+                                          
   }
+  else if ((pollingValues[0] <= 500))                            // Check to see if there is a 90 degree turn to the right
+  {
+    //delay(100);
+    stop_motors();     // turn robot
+    delay(1000);
+    drive_motor(RIGHTMOTOR, FWD, 50);
+    drive_motor(LEFTMOTOR, FWD, 50);
+    delay(100);
+    stop_motors();
+    poll.read(pollingValues);
+    if ((pollingValues[1] <= 500)) 
+    {
+      drive_motor(RIGHTMOTOR, FWD, 70);
+      delay(2000);
+    }
+    turn(LEFT);                                       
+  }
+
   // If there is no detected line on either polling sensor, continue with the PD Line Following
   {  
     int position = qtrrc.readLine(sensorValues,1,1);                       // Get calibrated readings along with the line position
@@ -105,6 +126,7 @@ void loop()
 // this function sets up the motorshield
 void setupMotorshield()
 {
+  pinMode(STBY, OUTPUT);
   pinMode(RIGHTMOTORFORWARD, OUTPUT);
   pinMode(RIGHTMOTORBACKWARD, OUTPUT);
   pinMode(RIGHTMOTORPWM, OUTPUT);
@@ -112,6 +134,7 @@ void setupMotorshield()
   pinMode(LEFTMOTORBACKWARD, OUTPUT);
   pinMode(LEFTMOTORPWM, OUTPUT);
   
+  digitalWrite(STBY, HIGH);
   digitalWrite(RIGHTMOTORFORWARD, HIGH);
   digitalWrite(RIGHTMOTORBACKWARD, LOW);
   digitalWrite(LEFTMOTORFORWARD, HIGH);
@@ -199,36 +222,42 @@ void turn(int dir)
 {
   if (dir == RIGHT)
   {
-    drive_motor(RIGHTMOTOR, FWD, 50);
-    drive_motor(LEFTMOTOR, BWD, 50);
-    delay(1000);
-    while (true)
-    {
-      poll.read(pollingValues);
-      qtrrc.read(sensorValues);
-      if (pollingValues[0] < 500 )
-      {
-        stop_motors();
-        break;
-      }
-    }
-    
-    delay(2000);
-  }
-  else if (dir == LEFT)
-  {
     drive_motor(RIGHTMOTOR, BWD, 50);
     drive_motor(LEFTMOTOR, FWD, 50);
-    poll.read(pollingValues);
-    delay(500);
-    while (pollingValues[0] < 500) 
+    turnIndicator.read(pollingValues);
+    while (pollingValues[0] < 300) 
     {
-      poll.read(pollingValues);
+      turnIndicator.read(pollingValues);
       delay(100);
     }
     while (true)
     {
-      poll.read(pollingValues);
+      turnIndicator.read(pollingValues);
+      if (pollingValues[0] < 300 )
+      {
+        stop_motors();
+        break;
+      }
+      delay(20);
+    }
+    drive_motor(RIGHTMOTOR, FWD, 50);
+    drive_motor(LEFTMOTOR, FWD, 50);
+    delay(500);
+  }
+  
+  else if (dir == LEFT)
+  {
+    drive_motor(RIGHTMOTOR, FWD, 50);
+    drive_motor(LEFTMOTOR, BWD, 50);
+    turnIndicator.read(pollingValues);
+    while (pollingValues[0] < 500) 
+    {
+      turnIndicator.read(pollingValues);
+      delay(100);
+    }
+    while (true)
+    {
+      turnIndicator.read(pollingValues);
       if (pollingValues[0] < 500 )
       {
         stop_motors();
@@ -236,9 +265,9 @@ void turn(int dir)
       }
       delay(20);
     }
-    drive_motor(RIGHT, FWD, 50);
-    drive_motor(LEFT, FWD, 50);
-    delay(2000);
+    drive_motor(RIGHTMOTOR, FWD, 50);
+    drive_motor(LEFTMOTOR, FWD, 50);
+    delay(500);
   }
     
 }

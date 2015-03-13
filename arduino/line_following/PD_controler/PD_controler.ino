@@ -1,12 +1,12 @@
 /*
   This program uses PD control to follow a white line on a black background.
-  The SeeedStudio Motorshield V2.2 on an Arduino UNO was used.
 */  
 
 #include <QTRSensors.h>
+
 // define controller constants for error calculation
 #define KP 0.05                     // Proportional Control Constant
-#define KD 50                     // Derivative Control Constant. ( Note: KP < KD)
+#define KD 50                       // Derivative Control Constant. ( Note: KP < KD)
 
 //define Max- and Basespeed
 #define MAXSPEED 100          
@@ -14,19 +14,19 @@
 
 //define line following set-up
 #define NUM_SENSORS 4             // Number of sensors used to follow a straight line
-#define NUM_POLLING_SENSORS 2      // Number of sensors used to poll for a 90 degree turn
-#define NUM_TURNING_SENSORS 2 
-#define TIMEOUT       2500         // Waits for 2500 us for sensor outputs to go low. If they are not yet low, value is set at 2500
-#define EMITTER_PIN   30            // Emitter is controlled by digital pin 1
+#define NUM_POLLING_SENSORS 2     // Number of sensors used to poll for a 90 degree turn
+#define NUM_TURNING_SENSORS 2     // Number of sensors used to stop turns
+#define TIMEOUT       2500        // Waits for 2500 us for sensor outputs to go low. If they are not yet low, value is set at 2500
+#define EMITTER_PIN   30           // Emitter is controlled by digital pin 30
 
 //define constants for motor shield pin assignments
 #define STBY 24
-#define RIGHTMOTORFORWARD 23        // Defined by the MotorShield. Do not use these pins for anything else.
-#define RIGHTMOTORBACKWARD 22       // MotorShield
-#define RIGHTMOTORPWM 2            // MotorShield
-#define LEFTMOTORFORWARD 25          // MotorShield
-#define LEFTMOTORBACKWARD 26        // MotorShield
-#define LEFTMOTORPWM 3              // MotorShield
+#define RIGHTMOTORFORWARD 23        
+#define RIGHTMOTORBACKWARD 22       
+#define RIGHTMOTORPWM 2             
+#define LEFTMOTORFORWARD 25         
+#define LEFTMOTORBACKWARD 26        
+#define LEFTMOTORPWM 3              
 
 //define constants for motor control
 #define RIGHTMOTOR 1
@@ -37,11 +37,12 @@
 #define LEFT 0
 
 // sensor set-up according to QTR library
-QTRSensorsRC qtrrc((unsigned char[]) { 33, 34, 35, 36} ,NUM_SENSORS, TIMEOUT, EMITTER_PIN);  // The 4 sensors used for following a straight line are digital pins 3, 4, 5, and 6
-QTRSensorsRC poll((unsigned char[]) {38, 31} ,NUM_POLLING_SENSORS, TIMEOUT, EMITTER_PIN);            // The 2 polling sensors for 90 degree turns are digital pins 2 and 7
-QTRSensorsRC turnIndicator((unsigned char[]) {39, 40} ,NUM_TURNING_SENSORS, TIMEOUT);
-unsigned int sensorValues[NUM_SENSORS];                                                    // An array containing the sensor values for the 4 line following sensors
-unsigned int pollingValues[NUM_POLLING_SENSORS];                                           // An array containing the sensor values for the 2 polling sensors
+QTRSensorsRC qtrrc((unsigned char[]) { 33, 34, 35, 36} ,NUM_SENSORS, TIMEOUT, EMITTER_PIN);  // The 4 sensors used for following a straight line are digital pins 33, 34, 35, and 36
+QTRSensorsRC poll((unsigned char[]) {38, 31} ,NUM_POLLING_SENSORS, TIMEOUT, EMITTER_PIN);    // The 2 polling sensors for 90 degree turns are digital pins 38 and 31
+QTRSensorsRC turnIndicator((unsigned char[]) {39, 40} ,NUM_TURNING_SENSORS, TIMEOUT);        // The 2 polling sensors at the front are digital pins 39 and 40
+unsigned int sensorValues[NUM_SENSORS];                                                      // An array containing the sensor values for the 4 line following sensors
+unsigned int pollingValues[NUM_POLLING_SENSORS];                                             // An array containing the sensor values for the 2 polling sensors
+unsigned int frontPollingValues[NUM_TURNING_SENSORS];                                        // An array containing the sensor values for the 2 front polling sensors
 
 
 /********************  SETUP  ***************************************************************************************************************/
@@ -66,30 +67,30 @@ void loop()
   if ((pollingValues[1] <= 500))                            // Check to see if there is a 90 degree turn to the left
   {
     //delay(100);    
-    stop_motors();     // turn robot
+    stop_motors();     
     delay(1000);
-    drive_motor(RIGHTMOTOR, FWD, 50);
+    /*drive_motor(RIGHTMOTOR, FWD, 50);
     drive_motor(LEFTMOTOR, FWD, 50);
     delay(100);
-    stop_motors();
+    stop_motors();*/
     poll.read(pollingValues);
     if ((pollingValues[0] <= 500)) 
     {
       drive_motor(LEFTMOTOR, FWD, 70);
       delay(2000);
-    }                                 // turn robot
+    }                                 
     turn(RIGHT);
                                           
   }
-  else if ((pollingValues[0] <= 500))                            // Check to see if there is a 90 degree turn to the right
+  else if ((pollingValues[0] <= 500))                         // Check to see if there is a 90 degree turn to the right
   {
     //delay(100);
-    stop_motors();     // turn robot
+    stop_motors();    
     delay(1000);
-    drive_motor(RIGHTMOTOR, FWD, 50);
+    /*drive_motor(RIGHTMOTOR, FWD, 50);
     drive_motor(LEFTMOTOR, FWD, 50);
     delay(100);
-    stop_motors();
+    stop_motors();*/
     poll.read(pollingValues);
     if ((pollingValues[1] <= 500)) 
     {
@@ -117,13 +118,17 @@ void loop()
   }
   
   {
-    // use drive function to with corrected motor speeds
+    // Use drive function with corrected motor speeds
     drive_motor(RIGHTMOTOR, FWD, rightMotorSpeed); 
     drive_motor(LEFTMOTOR, FWD, leftMotorSpeed);    
   }
 }
-/**********************************************************************************/
-// this function sets up the motorshield
+
+
+/************************** FUNCTIONS ********************************************************/
+
+/************************** SETUP MOTORSHIELD ************************************************/
+// This function sets up the motorshield
 void setupMotorshield()
 {
   pinMode(STBY, OUTPUT);
@@ -141,7 +146,8 @@ void setupMotorshield()
   digitalWrite(LEFTMOTORBACKWARD, LOW);
 }
 
-// This function auto calibrated the sensor without having to move all sensors over white and black.
+/*************************** AUTO-CALIBRATE *****************************************************************************/
+// This function auto calibrates the sensor without having to move all sensors over white and black.
 void auto_calibrate()
 {
   // calibrate for 1 second. calibration values are passed to qtrrc.calibtratedMinimumOn/ qtrcc.calibratedMaximumOn
@@ -173,6 +179,7 @@ void auto_calibrate()
   }
 }
 
+/************************** DRIVE MOTORS **********************************************************************/
 // this function drives the motors: specify motor, direction, speed
 void drive_motor(boolean motor, boolean dir, int spd)
 {
@@ -210,6 +217,7 @@ void drive_motor(boolean motor, boolean dir, int spd)
   }  
 }
 
+/************************* STOP MOTORS ***************************************************************/
 // stop both motors
 void stop_motors()
 {
@@ -217,6 +225,8 @@ void stop_motors()
  drive_motor(LEFTMOTOR, FWD, 0);
 }
 
+
+/************************** TURNS ********************************************************************/
 // initiate a turn: specify direction
 void turn(int dir)
 {
@@ -224,17 +234,18 @@ void turn(int dir)
   {
     drive_motor(RIGHTMOTOR, BWD, 50);
     drive_motor(LEFTMOTOR, FWD, 50);
-    turnIndicator.read(pollingValues);
-    while (pollingValues[0] < 300) 
+    turnIndicator.read(frontPollingValues);
+    while (frontPollingValues[1] < 500 && frontPollingValues[0] < 500) 
     {
-      turnIndicator.read(pollingValues);
+      turnIndicator.read(frontPollingValues);
       delay(100);
     }
     while (true)
     {
-      turnIndicator.read(pollingValues);
-      if (pollingValues[0] < 300 )
+      turnIndicator.read(frontPollingValues);
+      if (frontPollingValues[1] < 300  && frontPollingValues[0] < 300)
       {
+        delay(100);            //This delay helps avoid false positives
         stop_motors();
         break;
       }
@@ -249,17 +260,18 @@ void turn(int dir)
   {
     drive_motor(RIGHTMOTOR, FWD, 50);
     drive_motor(LEFTMOTOR, BWD, 50);
-    turnIndicator.read(pollingValues);
-    while (pollingValues[0] < 500) 
+    turnIndicator.read(frontPollingValues);
+    while (frontPollingValues[1] < 500 && frontPollingValues[0] < 500) 
     {
-      turnIndicator.read(pollingValues);
+      turnIndicator.read(frontPollingValues);
       delay(100);
     }
     while (true)
     {
-      turnIndicator.read(pollingValues);
-      if (pollingValues[0] < 500 )
+      turnIndicator.read(frontPollingValues);
+      if (frontPollingValues[1] < 300  && frontPollingValues[0] < 300)
       {
+        delay(100);                      //This delay helps avoid false positives
         stop_motors();
         break;
       }
@@ -269,6 +281,7 @@ void turn(int dir)
     drive_motor(LEFTMOTOR, FWD, 50);
     delay(500);
   }
-    
+
+/*********************** END OF PROGRAM ************************************************************************/    
 }
 

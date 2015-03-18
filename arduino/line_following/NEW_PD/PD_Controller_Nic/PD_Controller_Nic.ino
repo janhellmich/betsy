@@ -1,3 +1,4 @@
+
 /*
   This program uses PD control to follow a white line on a black background.
 */  
@@ -37,7 +38,7 @@
 #define LEFT 0
 
 // sensor set-up according to QTR library
-QTRSensorsRC qtrrc((unsigned char[]) { 33, 34, 35, 36} ,NUM_SENSORS, TIMEOUT, EMITTER_PIN);  // The 4 sensors used for following a straight line are digital pins 33, 34, 35, and 36
+QTRSensorsRC qtrrc((unsigned char[]) { 33, 34, 35, 36 } ,NUM_SENSORS, TIMEOUT, EMITTER_PIN);  // The 4 sensors used for following a straight line are digital pins 33, 34, 35, and 36
 QTRSensorsRC poll((unsigned char[]) {38, 31} ,NUM_POLLING_SENSORS, TIMEOUT, EMITTER_PIN);    // The 2 polling sensors for 90 degree turns are digital pins 38 and 31
 QTRSensorsRC turnIndicator((unsigned char[]) {39, 40} ,NUM_TURNING_SENSORS, TIMEOUT);        // The 2 polling sensors at the front are digital pins 39 and 40
 unsigned int sensorValues[NUM_SENSORS];                                                      // An array containing the sensor values for the 4 line following sensors
@@ -52,6 +53,7 @@ void setup()
   setupMotorshield();                                         // Jump to setupMotorshield to define pins as output
   auto_calibrate();                                           // function that calibrates the line following sensor
   Serial.begin(9600);
+  Serial.println("Serial Activated");
 }
 
 // Initialize error constant and motor speeds
@@ -66,6 +68,7 @@ boolean lastTurn;
 
 void loop()
 {
+  
   //check for upcoming turns
   
   poll.read(pollingValues);									// Get polling sensor values
@@ -74,12 +77,12 @@ void loop()
     stop_motors();     
     delay(100);
     turnIndicator.read(frontPollingValues);                  // Read front sensors 
-    if(frontPollingValues[0] <= 500 && frontPollingValues[1] <= 500) // Determine if the front sensors are seeing white
+    if(frontPollingValues[0] <= 500 || frontPollingValues[1] <= 500) // Determine if the front sensors are seeing white
     {
       poll.read(pollingValues);
       if((pollingValues[0] <= 500)) //Check left sensor
       {
-        Serial.println('Playing Game');    
+        Serial.println("Playing Game");    
         stop_motors();
         //Play Game
         delay(4000);	
@@ -87,7 +90,7 @@ void loop()
        }
        else
        {
-         Serial.println('Game Turn');
+         Serial.println("Game Turn");
          //Game Turn!
 	 lastTurn = RIGHT;
          Serial.println(lastTurn);
@@ -99,7 +102,7 @@ void loop()
        poll.read(pollingValues); //Read sensor values
        if((pollingValues[0] <= 500)) //Check left sensor
        {
-	 Serial.println('T-Intersection');
+	 Serial.println("T-Intersection");
          //T-Intersection
 	 lastTurn = RIGHT;
          Serial.println(lastTurn);
@@ -108,7 +111,7 @@ void loop()
         }
 	else
 	{
-          Serial.println('Right Turn');
+          Serial.println("Right Turn");
 	  turn(RIGHT);
 	}
       }
@@ -124,7 +127,7 @@ void loop()
       poll.read(pollingValues);
       if((pollingValues[1] <= 500)) //Check right sensor
       {
-        Serial.println('Playing Game');
+        Serial.println("Playing Game");
         stop_motors();
 	//Play Game
 	delay(4000);	
@@ -132,7 +135,7 @@ void loop()
       }
       else
       {
-        Serial.println('Game Turn');
+        Serial.println("Game Turn");
 	lastTurn = LEFT;
         Serial.println(lastTurn);
 	turn(LEFT); 
@@ -143,7 +146,7 @@ void loop()
       poll.read(pollingValues);
       if((pollingValues[1] <= 500)) //Check right sensor
       {
-        Serial.println('T-Intersection');
+        Serial.println("T-Intersection");
 	//T-Intersection
 	lastTurn = LEFT;
         Serial.println(lastTurn);
@@ -152,15 +155,14 @@ void loop()
       }
       else
       {
-        Serial.println('Left Turn');
+        Serial.println("Left Turn");
 	turn(LEFT);
       }
      }
    }
-
   // If there is no detected line on either polling sensor, continue with the PD Line Following
   { 
-    Serial.println('Line Following'); 
+     
     int positioning = qtrrc.readLine(sensorValues,1,1);                       // Get calibrated readings along with the line position
     int error = positioning - 1500;                                           // Determine the error from the calculated position
     
@@ -280,7 +282,7 @@ void drive_motor(boolean motor, boolean dir, int spd)
 // stop both motors
 void stop_motors()
 {
-  Serial.println('Stopping Motors');
+  Serial.println("Stopping Motors");
   drive_motor(RIGHTMOTOR, FWD, 0);
   drive_motor(LEFTMOTOR, FWD, 0);
 }
@@ -299,11 +301,10 @@ void turn(boolean dir)
 {
   if (dir == RIGHT)
   {
-    Serial.println('Turning Right');
     drive_motor(RIGHTMOTOR, BWD, 50);
     drive_motor(LEFTMOTOR, FWD, 50);
     turnIndicator.read(frontPollingValues);
-    while (frontPollingValues[1] < 500 && frontPollingValues[0] < 500) 
+    while (frontPollingValues[1] < 800 && frontPollingValues[0] < 800) 
     {
       turnIndicator.read(frontPollingValues);
       delay(100);
@@ -311,28 +312,26 @@ void turn(boolean dir)
     while (true)
     {
       turnIndicator.read(frontPollingValues);
-      if (frontPollingValues[1] < 400  && frontPollingValues[0] < 400)
+      if (frontPollingValues[0] < 500 && frontPollingValues[1] < 500)
       {
-        Serial.println('Found Line');
-        delay(100);            //This delay helps avoid false positives
+        delay(20);            //This delay helps avoid false positives
         stop_motors();
         break;
       }
-      delay(20);
+      //delay(20);
     }
-    Serial.println('Leaving Right Turn');
     drive_motor(RIGHTMOTOR, FWD, 50);
     drive_motor(LEFTMOTOR, FWD, 50);
-    delay(500);
+    delay(300);
+    reset_motor_speeds();
   }
   
   else if (dir == LEFT)
   {
-    Serial.println('Turning Left');
     drive_motor(RIGHTMOTOR, FWD, 50);
     drive_motor(LEFTMOTOR, BWD, 50);
     turnIndicator.read(frontPollingValues);
-    while (frontPollingValues[0] < 500 && frontPollingValues[1] < 500) 
+    while (frontPollingValues[0] < 800 && frontPollingValues[1] < 800) 
     {
       turnIndicator.read(frontPollingValues);
       delay(100);
@@ -340,19 +339,17 @@ void turn(boolean dir)
     while (true)
     {
       turnIndicator.read(frontPollingValues);
-      if (frontPollingValues[1] < 400  && frontPollingValues[0] < 400)
+      if (frontPollingValues[0] < 500 && frontPollingValues[1] < 500)
       {
-        Serial.println('Found line');
-        delay(100);                      //This delay helps avoid false positives
+        delay(20);                      //This delay helps avoid false positives
         stop_motors();
         break;
       }
-      delay(20);
+      //delay(20);
     }
-    Serial.println('Leaving Left Turn');
     drive_motor(RIGHTMOTOR, FWD, 50);
     drive_motor(LEFTMOTOR, FWD, 50);
-    delay(500);
+    delay(300);
     reset_motor_speeds();
   }
 }
@@ -361,10 +358,11 @@ void turn(boolean dir)
 //function to follow line bwds after playing a game
 void follow_bwd(boolean dir)
 {
-  Serial.println('BWD Function');
+  Serial.println("BWD Function");
   while (pollingValues[0] < 500 || pollingValues[1] < 500)
   {
-    Serial.println('Leaving Box');
+    Serial.println("The var lastTurn is");
+    Serial.print(lastTurn);
     poll.read(pollingValues);
     drive_motor(RIGHTMOTOR, BWD, 50);
     drive_motor(LEFTMOTOR, BWD, 50);
@@ -373,11 +371,10 @@ void follow_bwd(boolean dir)
 
  while (true)
  {
-    Serial.println('BWD Line Following');
     poll.read(pollingValues);
     if ((pollingValues[0] < 500 || pollingValues[1] < 500))
     {
-      Serial.println('Found Line! Leaving BWD Function');
+      Serial.println("Found Line! Leaving BWD Function");
       turn(!dir);
       break;
     }

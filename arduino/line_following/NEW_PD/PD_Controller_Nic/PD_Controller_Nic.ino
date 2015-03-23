@@ -6,19 +6,22 @@
 #include <QTRSensors.h>
 
 // define controller constants for error calculation
-#define KP .05                    // Proportional Control Constant
+#define KP 0.1                 // Proportional Control Constant
 #define KD 50                       // Derivative Control Constant. ( Note: KP < KD)
 
 //define Max- and Basespeed
-#define MAXSPEED 75          
-#define BASESPEED 70         
+#define MAXSPEED 100          
+#define BASESPEED 80         
 
 //define line following set-up
-#define NUM_SENSORS 4             // Number of sensors used to follow a straight line
+#define NUM_SENSORS 6             // Number of sensors used to follow a straight line
 #define NUM_POLLING_SENSORS 2     // Number of sensors used to poll for a 90 degree turn
 #define NUM_TURNING_SENSORS 2     // Number of sensors used to stop turns
 #define TIMEOUT       2500        // Waits for 2500 us for sensor outputs to go low. If they are not yet low, value is set at 2500
 #define EMITTER_PIN   30           // Emitter is controlled by digital pin 30
+
+//define photoresitor pin
+#define PHOTORESITORPIN 0
 
 //define constants for motor shield pin assignments
 #define STBY 24
@@ -38,7 +41,7 @@
 #define LEFT 0
 
 // sensor set-up according to QTR library
-QTRSensorsRC qtrrc((unsigned char[]) { 33, 34, 35, 36 } ,NUM_SENSORS, TIMEOUT, EMITTER_PIN);  // The 4 sensors used for following a straight line are digital pins 33, 34, 35, and 36
+QTRSensorsRC qtrrc((unsigned char[]) {32, 33, 34, 35, 36, 37 } ,NUM_SENSORS, TIMEOUT, EMITTER_PIN);  // The 4 sensors used for following a straight line are digital pins 33, 34, 35, and 36
 QTRSensorsRC poll((unsigned char[]) {38, 31} ,NUM_POLLING_SENSORS, TIMEOUT, EMITTER_PIN);    // The 2 polling sensors for 90 degree turns are digital pins 38 and 31
 QTRSensorsRC turnIndicator((unsigned char[]) {39, 40} ,NUM_TURNING_SENSORS, TIMEOUT);        // The 2 polling sensors at the front are digital pins 39 and 40
 unsigned int sensorValues[NUM_SENSORS];                                                      // An array containing the sensor values for the 4 line following sensors
@@ -51,11 +54,11 @@ unsigned int frontPollingValues[NUM_TURNING_SENSORS];                           
 void setup()
 {
   setupMotorshield();                                         // Jump to setupMotorshield to define pins as output
-  auto_calibrate();                                           // function that calibrates the line following sensor
-  Serial.begin(9600);
-  Serial.println("Serial Activated");
+  //Serial.begin(9600);
+  //Serial.println("Serial Activated");
+  //start_course();
+  auto_calibrate();   // function that calibrates the line following sensor
 }
-
 // Initialize error constant and motor speeds
 int lastError = 0;      
 int rightMotorSpeed = 0;
@@ -63,37 +66,38 @@ int leftMotorSpeed = 0;
 
 //Declare global last turn variable
 boolean lastTurn;
+boolean gameTurn = 0;
+int gameCount = 0;
 
 /******************   MAIN LOOP   ***************************************************************************************************************/
 
 void loop()
-{
-  
+{ 
   //check for upcoming turns
-  
-  poll.read(pollingValues);									// Get polling sensor values
+  poll.read(pollingValues);				    // Get polling sensor values
   if ((pollingValues[1] <= 500))                            // Check to see if there is a 90 degree turn to the right
   {   
     stop_motors();     
     delay(100);
     turnIndicator.read(frontPollingValues);                  // Read front sensors 
-    if(frontPollingValues[0] <= 500 || frontPollingValues[1] <= 500) // Determine if the front sensors are seeing white
+    if(frontPollingValues[0] <= 1300 || frontPollingValues[1] <= 1300) // Determine if the front sensors are seeing white
     {
       poll.read(pollingValues);
-      if((pollingValues[0] <= 500)) //Check left sensor
-      {
-        Serial.println("Playing Game");    
+      if((pollingValues[0] <= 500 || gameTurn == 1)) //Check left sensor
+      {    
         stop_motors();
         //Play Game
-        delay(4000);	
+        delay(4000);
+        gameCount++;
+        gameTurn = 0;	
         follow_bwd(lastTurn);
        }
        else
        {
-         Serial.println("Game Turn");
          //Game Turn!
 	 lastTurn = RIGHT;
-         Serial.println(lastTurn);
+         delay(2000);
+         gameTurn = 1;
 	 turn(RIGHT);
 	}
      }
@@ -102,42 +106,43 @@ void loop()
        poll.read(pollingValues); //Read sensor values
        if((pollingValues[0] <= 500)) //Check left sensor
        {
-	 Serial.println("T-Intersection");
          //T-Intersection
+         if (gameCount == 4)
+         {
+          stop_motors();
+          delay(10000);
+         }
 	 lastTurn = RIGHT;
-         Serial.println(lastTurn);
       	 turn(RIGHT);
-      	 //delay(2000);
         }
 	else
 	{
-          Serial.println("Right Turn");
 	  turn(RIGHT);
 	}
       }
   }
-
   else if ((pollingValues[0] <= 500))                       // Check to see if there is a 90 degree turn to the left
   {   
     stop_motors();     
     delay(100);
     turnIndicator.read(frontPollingValues);                  // Read front sensors 
-    if(frontPollingValues[0] <= 500 && frontPollingValues[1] <= 500) // Determine if the front sensors are seeing white
+    if(frontPollingValues[0] <= 1300 || frontPollingValues[1] <= 1300) // Determine if the front sensors are seeing white
     {
       poll.read(pollingValues);
-      if((pollingValues[1] <= 500)) //Check right sensor
+      if((pollingValues[1] <= 500 || gameTurn == 1)) //Check right sensor
       {
-        Serial.println("Playing Game");
         stop_motors();
 	//Play Game
-	delay(4000);	
+	delay(4000);
+        gameCount++;
+        gameTurn = 0;	
 	follow_bwd(lastTurn);
       }
       else
       {
-        Serial.println("Game Turn");
 	lastTurn = LEFT;
-        Serial.println(lastTurn);
+        delay(2000);
+        gameTurn = 1;
 	turn(LEFT); 
       }
     }
@@ -146,16 +151,17 @@ void loop()
       poll.read(pollingValues);
       if((pollingValues[1] <= 500)) //Check right sensor
       {
-        Serial.println("T-Intersection");
 	//T-Intersection
+        if (gameCount == 4)
+        {
+          stop_motors();
+          delay(10000);
+        }
 	lastTurn = LEFT;
-        Serial.println(lastTurn);
         turn(LEFT);        
-      	//delay(2000);
       }
       else
       {
-        Serial.println("Left Turn");
 	turn(LEFT);
       }
      }
@@ -163,8 +169,8 @@ void loop()
   // If there is no detected line on either polling sensor, continue with the PD Line Following
   { 
      
-    int positioning = qtrrc.readLine(sensorValues,1,1);                       // Get calibrated readings along with the line position
-    int error = positioning - 1500;                                           // Determine the error from the calculated position
+    int positioning = qtrrc.readLine(sensorValues,QTR_EMITTERS_ON, 1);                       // Get calibrated readings along with the line position
+    int error = positioning - 2500;                                           // Determine the error from the calculated position
     
     int motorSpeed = KP * error + KD * (error - lastError);                // Adjust motorspeed according to constants KP and KD
     lastError = error;                                                     // Update last error to compare to next error
@@ -282,7 +288,6 @@ void drive_motor(boolean motor, boolean dir, int spd)
 // stop both motors
 void stop_motors()
 {
-  Serial.println("Stopping Motors");
   drive_motor(RIGHTMOTOR, FWD, 0);
   drive_motor(LEFTMOTOR, FWD, 0);
 }
@@ -301,10 +306,11 @@ void turn(boolean dir)
 {
   if (dir == RIGHT)
   {
-    drive_motor(RIGHTMOTOR, BWD, 50);
-    drive_motor(LEFTMOTOR, FWD, 50);
+    drive_motor(RIGHTMOTOR, BWD, BASESPEED);
+    drive_motor(LEFTMOTOR, FWD, BASESPEED);
+    
     turnIndicator.read(frontPollingValues);
-    while (frontPollingValues[1] < 800 && frontPollingValues[0] < 800) 
+    while (frontPollingValues[1] < 1000 || frontPollingValues[0] < 1000) 
     {
       turnIndicator.read(frontPollingValues);
       delay(100);
@@ -318,20 +324,16 @@ void turn(boolean dir)
         stop_motors();
         break;
       }
-      //delay(20);
     }
-    drive_motor(RIGHTMOTOR, FWD, 50);
-    drive_motor(LEFTMOTOR, FWD, 50);
-    delay(300);
-    reset_motor_speeds();
   }
   
   else if (dir == LEFT)
   {
-    drive_motor(RIGHTMOTOR, FWD, 50);
-    drive_motor(LEFTMOTOR, BWD, 50);
+    drive_motor(RIGHTMOTOR, FWD, BASESPEED);
+    drive_motor(LEFTMOTOR, BWD, BASESPEED);
+    
     turnIndicator.read(frontPollingValues);
-    while (frontPollingValues[0] < 800 && frontPollingValues[1] < 800) 
+    while (frontPollingValues[0] < 1000 || frontPollingValues[1] < 1000) 
     {
       turnIndicator.read(frontPollingValues);
       delay(100);
@@ -345,41 +347,37 @@ void turn(boolean dir)
         stop_motors();
         break;
       }
-      //delay(20);
     }
-    drive_motor(RIGHTMOTOR, FWD, 50);
-    drive_motor(LEFTMOTOR, FWD, 50);
-    delay(300);
-    reset_motor_speeds();
   }
+  drive_motor(RIGHTMOTOR, FWD, BASESPEED);
+  drive_motor(LEFTMOTOR, FWD, BASESPEED);
+  delay(200);
+  reset_motor_speeds();
 }
   
   /************************** FOLLOW LINE BWDS ********************************************************************/
 //function to follow line bwds after playing a game
 void follow_bwd(boolean dir)
 {
-  Serial.println("BWD Function");
-  while (pollingValues[0] < 500 || pollingValues[1] < 500)
+  while (pollingValues[0] < 1000 || pollingValues[1] < 1000)
   {
-    Serial.println("The var lastTurn is");
-    Serial.print(lastTurn);
     poll.read(pollingValues);
-    drive_motor(RIGHTMOTOR, BWD, 50);
-    drive_motor(LEFTMOTOR, BWD, 50);
+    
+    drive_motor(RIGHTMOTOR, BWD, BASESPEED);
+    drive_motor(LEFTMOTOR, BWD, BASESPEED);
   }
   reset_motor_speeds();
 
- while (true)
- {
+  while (true)
+  {
     poll.read(pollingValues);
     if ((pollingValues[0] < 500 || pollingValues[1] < 500))
     {
-      Serial.println("Found Line! Leaving BWD Function");
       turn(!dir);
       break;
     }
     int positioning = qtrrc.readLine(sensorValues,1,1);                       // Get calibrated readings along with the line position
-    int error = positioning - 1500;                                           // Determine the error from the calculated position
+    int error = positioning - 2500;                                           // Determine the error from the calculated position
 
     int motorSpeed = KP * error + KD * (error - lastError);                // Adjust motorspeed according to constants KP and KD
     lastError = error;                                                     // Update last error to compare to next error
@@ -394,11 +392,33 @@ void follow_bwd(boolean dir)
   
     drive_motor(RIGHTMOTOR, BWD, rightMotorSpeed); 
     drive_motor(LEFTMOTOR, BWD, leftMotorSpeed);    
- }
+  }
+
+}
 
 
+/*********************** START OF THE GAME ************************************************************************/    
 
+void start_course() 
+{
+  int currentRead =analogRead(PHOTORESITORPIN);
+  while (currentRead < 500) 
+  {
+    currentRead = analogRead(PHOTORESITORPIN);
+    delay(20);
+  }
+  poll.read(pollingValues);
+  drive_motor(RIGHT, FWD, BASESPEED);
+  drive_motor(LEFT, FWD, BASESPEED);
+  while (pollingValues[0] <=1500 && pollingValues[1] <= 1500) 
+  {
+    poll.read(pollingValues);
+    delay(20);
+  }
+  stop_motors();
+}
+    
 
 /*********************** END OF PROGRAM ************************************************************************/    
-}
+
 

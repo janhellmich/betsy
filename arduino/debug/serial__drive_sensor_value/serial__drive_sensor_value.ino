@@ -12,12 +12,12 @@
 // monitor as numbers from 0 (maximum reflectance) to 2500 (minimum reflectance).
 
 
-#define NUM_SENSORS   6     // number of sensors used
+#define NUM_SENSORS   8     // number of sensors used
 #define TIMEOUT       2500  // waits for 2500 microseconds for sensor outputs to go low
-#define EMITTER_PIN   1     // emitter is controlled by digital pin 2
+#define EMITTER_PIN   30     // emitter is controlled by digital pin 2
 
 // sensors 0 through 7 are connected to digital pins 3 through 10, respectively
-QTRSensorsRC qtrrc((unsigned char[]) {2,3,4,5,6,7},
+QTRSensorsRC qtrrc((unsigned char[]) {31, 32, 33, 34, 35, 36, 37, 38},
   NUM_SENSORS, TIMEOUT, EMITTER_PIN); 
 unsigned int sensorValues[NUM_SENSORS];
 
@@ -33,7 +33,7 @@ void setup()
 void loop()
 {
   // read raw sensor values
-  qtrrc.read(sensorValues);
+  qtrrc.read(sensorValues, QTR_EMITTERS_ON);
 
   // print the sensor values as numbers from 0 to 2500, where 0 means maximum reflectance and
   // 1023 means minimum reflectance

@@ -14,7 +14,7 @@
 
 #define NUM_SENSORS   8     // number of sensors used
 #define TIMEOUT       2500  // waits for 2500 microseconds for sensor outputs to go low
-#define EMITTER_PIN   1     // emitter is controlled by digital pin 2
+#define EMITTER_PIN   30    // emitter is controlled by digital pin 2
 #define RESISTOR_PIN 0
 
 
@@ -27,8 +27,8 @@ LiquidCrystal lcd(43, 45, 47, 49, 51, 53);
   
 void setup()
 {
-  delay(500);
-  lcd.begin(16, 2);
+//  delay(500);
+//  lcd.begin(16, 2);
   Serial.begin(9600); // set the data rate in bits per second for serial data transmission
   delay(1000);
   
@@ -37,20 +37,20 @@ void setup()
 
 void loop()
 {
-  Serial.println(analogRead(0));
+  //Serial.println(analogRead(0));
   // read raw sensor values
-  qtrrc.read(sensorValues, QTR_EMITTERS_OFF);
-  lcd.setCursor(0,1);
-  lcd.clear();
-  lcd.print(sensorValues[7]);
+  qtrrc.read(sensorValues, QTR_EMITTERS_ON);
+//  lcd.setCursor(0,1);
+//  lcd.clear();
+//  lcd.print(sensorValues[7]);
   // print the sensor values as numbers from 0 to 2500, where 0 means maximum reflectance and
   // 1023 means minimum reflectance
-//  for (unsigned char i = 0; i < NUM_SENSORS; i++)
-//  {
-//    Serial.print(sensorValues[i]);
-//    Serial.print('\t'); // tab to format the raw data into columns in the Serial monitor
-//  }
-//  Serial.println();
+  for (unsigned char i = 0; i < NUM_SENSORS; i++)
+  {
+    Serial.print(sensorValues[i]);
+    Serial.print('\t'); // tab to format the raw data into columns in the Serial monitor
+  }
+  Serial.println();
   
   delay(500);
 }

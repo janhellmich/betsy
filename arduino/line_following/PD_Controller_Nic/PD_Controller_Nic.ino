@@ -64,7 +64,7 @@ void setup()
   setupMotorshield();                                         // Jump to setupMotorshield to define pins as output
   //Serial.begin(9600);
   //Serial.println("Serial Activated");
-  //start_course();
+  start_course();
   auto_calibrate();   // function that calibrates the line following sensor
   front_gripper(OPEN);
   delay(5000);
@@ -423,11 +423,7 @@ void start_course()
   poll.read(pollingValues);
   drive_motor(RIGHT, FWD, BASESPEED);
   drive_motor(LEFT, FWD, BASESPEED);
-  while (pollingValues[0] <=1500 && pollingValues[1] <= 1500) 
-  {
-    poll.read(pollingValues);
-    delay(20);
-  }
+  delay(900);
   stop_motors();
 }
 
@@ -456,14 +452,31 @@ void front_gripper(int action)
   
 }
 
+/********************* PLAY GAME ************************************************************************/    
+
 void play_game()
 {
   front_gripper(CLOSE);
-  delay(10000);
+  delay(6000);
   
   front_gripper(OPEN);
-  delay(2000);
+  delay(500);
  
+  drive_motor(RIGHT, FWD, 30); 
+  drive_motor(LEFT, FWD, 30); 
+  delay(500);
+  stop_motors();
+  
+  front_gripper(CLOSE);
+  delay(6000);
+  
+  front_gripper(OPEN);
+  delay(5000);
+  
+  drive_motor(RIGHT, BWD, 30); 
+  drive_motor(LEFT, BWD, 30); 
+  delay(500);
+  
 }
 /********************* END OF PROGRAM ************************************************************************/    
 

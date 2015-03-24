@@ -23,6 +23,10 @@
 //define photoresitor pin
 #define PHOTORESITORPIN 0
 
+//define Front Gripper Pins
+#define FGRIPPER1 41
+#define FGRIPPER2 42
+
 //define constants for motor shield pin assignments
 #define STBY 24
 #define RIGHTMOTORFORWARD 23        
@@ -39,6 +43,10 @@
 #define BWD 0
 #define RIGHT 1
 #define LEFT 0
+
+#define STOP 0
+#define OPEN 1
+#define CLOSE 2
 
 // sensor set-up according to QTR library
 QTRSensorsRC qtrrc((unsigned char[]) {32, 33, 34, 35, 36, 37 } ,NUM_SENSORS, TIMEOUT, EMITTER_PIN);  // The 4 sensors used for following a straight line are digital pins 33, 34, 35, and 36
@@ -58,6 +66,9 @@ void setup()
   //Serial.println("Serial Activated");
   //start_course();
   auto_calibrate();   // function that calibrates the line following sensor
+  front_gripper(OPEN);
+  delay(5000);
+  front_gripper(STOP);
 }
 // Initialize error constant and motor speeds
 int lastError = 0;      
@@ -87,7 +98,7 @@ void loop()
       {    
         stop_motors();
         //Play Game
-        delay(4000);
+        play_game();
         gameCount++;
         gameTurn = 0;	
         follow_bwd(lastTurn);
@@ -133,7 +144,7 @@ void loop()
       {
         stop_motors();
 	//Play Game
-	delay(4000);
+	play_game();
         gameCount++;
         gameTurn = 0;	
 	follow_bwd(lastTurn);
@@ -194,8 +205,8 @@ void loop()
 
 /************************** FUNCTIONS ********************************************************/
 
-/************************** SETUP MOTORSHIELD ************************************************/
-// This function sets up the motorshield
+/************************** SETUP PINS ************************************************/
+// This function sets up the pins
 void setupMotorshield()
 {
   pinMode(STBY, OUTPUT);
@@ -205,6 +216,8 @@ void setupMotorshield()
   pinMode(LEFTMOTORFORWARD, OUTPUT);
   pinMode(LEFTMOTORBACKWARD, OUTPUT);
   pinMode(LEFTMOTORPWM, OUTPUT);
+  pinMode(FGRIPPER1, OUTPUT);
+  pinMode(FGRIPPER2, OUTPUT);
   
   digitalWrite(STBY, HIGH);
   digitalWrite(RIGHTMOTORFORWARD, HIGH);
@@ -417,8 +430,41 @@ void start_course()
   }
   stop_motors();
 }
-    
 
-/*********************** END OF PROGRAM ************************************************************************/    
+/************************ FRONT GRIPPER **********************************************************************/
+
+void front_gripper(int action)
+{
+  if(action == STOP)
+  {
+    digitalWrite(FGRIPPER1, LOW);
+    digitalWrite(FGRIPPER2, LOW);
+  }  
+  
+  else if(action == OPEN)
+  {
+    digitalWrite(FGRIPPER1, LOW);
+    digitalWrite(FGRIPPER2, HIGH);
+  }
+  
+  else if(action == CLOSE)
+  {
+    digitalWrite(FGRIPPER1, HIGH);
+    digitalWrite(FGRIPPER2, LOW);
+  }
+  
+  
+}
+
+void play_game()
+{
+  front_gripper(CLOSE);
+  delay(10000);
+  
+  front_gripper(OPEN);
+  delay(2000);
+ 
+}
+/********************* END OF PROGRAM ************************************************************************/    
 
 

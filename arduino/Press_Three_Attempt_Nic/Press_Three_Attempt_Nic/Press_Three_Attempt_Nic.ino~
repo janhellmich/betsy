@@ -32,11 +32,6 @@ int greenSetpoint = 0;
 int yellowSetpoint = 0;
 int blueSetpoint = 0;
 
-const int RED = 1;
-const int GREEN = 2;
-const int YELLOW = 3;
-const int BLUE = 4;
-
 /********************  SETUP  ***************************************************************************************************************/
 void setup()
 {
@@ -82,10 +77,8 @@ void loop()
 
   Read_Sensors();
   Compare_Brightness(pos1, pos2);                                                            //Go to Function Compare_Brightness_1 to determine which color is lit and which button to press
+  Press_Button();
   //Assign press value to Pressed[0]
-  Pressed[0] = press;
-  Press_Button(Pressed[0]);
-  
 
   delay(725);                                                                                //Delay a certain amount of time to wait for 2nd color to illuminate
   Read_Sensors();
@@ -111,22 +104,22 @@ int Compare_Brightness(int pos1, int pos2)                                      
  
   if (brightnessRed > redSetpoint)                                                            //If Red sensor shows brightness > Red Setpoint
   {
-    press = RED;
+    press = 1;
   }
   
   if (brightnessGreen > greenSetpoint)                                                        //If Green sensor shows brightness > Green Setpoint
   {
-    press = GREEN;                                                                              
+    press = 2;                                                                              
   }
  
   if (brightnessYellow >yellowSetpoint)                                                       //If Yellow sensor shows brightness > Yellow Setpoint
   {
-    press = YELLOW;
+    press = 3;
   }
 
   if (brightnessBlue > blueSetpoint)                                                          //If Blue sensor shows brightness > Blue Setpoint
   {
-    press = BLUE;
+    press = 4;
   }
 
 }
@@ -170,7 +163,7 @@ int Read_Sensors()
 
 
 //Press the appropriate button
-void Press_Button(int press)
+int Press_Button()
 {
   //Press Red
   if (press == RED)                                                                              
@@ -233,10 +226,3 @@ void Press_Button(int press)
   }
 }
 
-void Play_Game()
-{
- if(turn == 0)
- {
-  Press_Button(j[turn])
- }
-}

@@ -1,6 +1,8 @@
 #include <LiquidCrystal.h>
 
-LiquidCrystal lcd(43, 45, 47, 49, 51, 53);
+// blue on the top left, purple top right
+
+LiquidCrystal lcd(49, 51, 53, 52, 50, 48);
   
 void setup()
 {
@@ -15,7 +17,7 @@ void loop()
 
   lcd.setCursor(0,1);
   lcd.clear();
-  lcd.print("Hello World");
+  lcd.print("IEEE");
   
   delay(500);
 }

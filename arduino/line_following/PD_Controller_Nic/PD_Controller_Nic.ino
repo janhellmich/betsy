@@ -51,7 +51,7 @@
 // sensor set-up according to QTR library
 QTRSensorsRC qtrrc((unsigned char[]) {32, 33, 34, 35, 36, 37 } ,NUM_SENSORS, TIMEOUT, EMITTER_PIN);  // The 4 sensors used for following a straight line are digital pins 33, 34, 35, and 36
 QTRSensorsRC poll((unsigned char[]) {38, 31} ,NUM_POLLING_SENSORS, TIMEOUT, EMITTER_PIN);    // The 2 polling sensors for 90 degree turns are digital pins 38 and 31
-QTRSensorsRC turnIndicator((unsigned char[]) {39, 40} ,NUM_TURNING_SENSORS, TIMEOUT);        // The 2 polling sensors at the front are digital pins 39 and 40
+QTRSensorsRC turnIndicator((unsigned char[]) {50, 51} ,NUM_TURNING_SENSORS, TIMEOUT);        // The 2 polling sensors at the front are digital pins 39 and 40
 unsigned int sensorValues[NUM_SENSORS];                                                      // An array containing the sensor values for the 4 line following sensors
 unsigned int pollingValues[NUM_POLLING_SENSORS];                                             // An array containing the sensor values for the 2 polling sensors
 unsigned int frontPollingValues[NUM_TURNING_SENSORS];                                        // An array containing the sensor values for the 2 front polling sensors
@@ -62,9 +62,9 @@ unsigned int frontPollingValues[NUM_TURNING_SENSORS];                           
 void setup()
 {
   setupMotorshield();                                         // Jump to setupMotorshield to define pins as output
-  //Serial.begin(9600);
+  Serial.begin(9600);
   //Serial.println("Serial Activated");
-  start_course();
+  //start_course();
   auto_calibrate();   // function that calibrates the line following sensor
   front_gripper(OPEN);
   delay(5000);
@@ -98,7 +98,7 @@ void loop()
       {    
         stop_motors();
         //Play Game
-        play_game();
+        play_simon();
         gameCount++;
         gameTurn = 0;	
         follow_bwd(lastTurn);
@@ -144,7 +144,7 @@ void loop()
       {
         stop_motors();
 	//Play Game
-	play_game();
+	play_simon();
         gameCount++;
         gameTurn = 0;	
 	follow_bwd(lastTurn);
@@ -478,6 +478,32 @@ void play_game()
   delay(500);
   
 }
+
+void play_simon()
+{
+  turnIndicator.read(frontPollingValues);
+  drive_motor(RIGHT, FWD, 50);
+  drive_motor(LEFT, BWD, 50);
+  while (frontPollingValues[0] <= 1000 && frontPollingValues[1] <= 1000) {
+    turnIndicator.read(frontPollingValues);
+    delay(20);
+  }
+  turnIndicator.read(frontPollingValues);
+  while (frontPollingValues[0] >= 300 || frontPollingValues[1] >= 300) {
+    turnIndicator.read(frontPollingValues);
+    Serial.println(frontPollingValues[0] + "    " + frontPollingValues[1]);
+    delay(20);
+  }
+  stop_motors();
+  delay(1000);
+  drive_motor(RIGHT, BWD, 50);
+  drive_motor(LEFT, BWD, 50);
+  delay(1000);
+  stop_motors();
+  delay(3000);
+}
+  
+  
 /********************* END OF PROGRAM ************************************************************************/    
 
 

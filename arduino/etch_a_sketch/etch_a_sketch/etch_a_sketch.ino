@@ -1,9 +1,9 @@
 #include <Servo.h>
 
-#define PIN_LEFT_ARM 6
-#define PIN_RIGHT_ARM 11
-#define PIN_LEFT_KNOB 10
-#define PIN_RIGHT_KNOB 9
+#define PIN_LEFT_ARM 11
+#define PIN_RIGHT_ARM 10
+#define PIN_LEFT_KNOB 12
+#define PIN_RIGHT_KNOB 13
 
 Servo leftArm;
 Servo rightArm;
@@ -25,11 +25,11 @@ int drive_speed = 8;
 
 void draw_action(int draw_dir, int seconds)
 {
-  turn_value = 0;
+
   switch(draw_dir){
   case 1:
     leftKnob.attach(PIN_LEFT_KNOB);  
-    leftKnob.write(null_speed + drive_speed);  
+    leftKnob.write(null_speed + drive_speed);                                                                
     delay(seconds);
     leftKnob.detach();
     break;
@@ -55,26 +55,37 @@ void draw_action(int draw_dir, int seconds)
 
 void setup() 
 { 
- rightArm.attach(PIN_RIGHT_ARM);
- leftArm.attach(PIN_LEFT_ARM);
- rightArm.write(180);
- leftArm.write(180);
- delay(3000);
+// rightArm.attach(PIN_RIGHT_ARM);
+// leftArm.attach(PIN_LEFT_ARM);
+// rightArm.write(180);
+// leftArm.write(180);
+// delay(3000);
 } 
 
 void loop() 
 { 
+  leftKnob.attach(PIN_LEFT_KNOB);
+  rightKnob.attach(PIN_RIGHT_KNOB);
+  leftKnob.write(90);
+  rightKnob.write(90);
   
-  rightArm.write(90);
-  leftArm.write(90);
   
+  
+  rightArm.write(110);
+  leftArm.write(110);
+  for (int i = 110; i >= 90; i--) 
+  {
+    rightArm.write(i);
+    leftArm.write(i);
+    delay(20);
+  }
   delay(3000);                      
   
-  Serial.println("Drawing I");
+  
   draw_action(DOWN, 700);
   draw_action(RIGHT, 400);
   
-  Serial.println("Drawing E");
+
   // draw E
   draw_action(UP, 700);
   draw_action(RIGHT, 400);
@@ -106,7 +117,7 @@ void loop()
   draw_action(LEFT, 500);
   draw_action(RIGHT, 750);
   
-  Serial.println("Drawing E");
+
   // draw E
   draw_action(UP, 700);
   draw_action(RIGHT, 400);

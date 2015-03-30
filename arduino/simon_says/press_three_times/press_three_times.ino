@@ -3,6 +3,9 @@
 Servo Servo_1;
 Servo Servo_2;
 Servo Servo_start;
+
+Servo arm;
+
 int pos_1 = 0;
 int pos_2 = 0;
 int pos_start = 0;
@@ -52,14 +55,20 @@ void setup()
 {
   Serial.begin(9600);
   
+  arm.attach(5);
+  arm.write(90);
+  delay(2000);
+  arm.write(180);
+  
+  
   pinMode(Sensor_Red, INPUT);
   pinMode(Sensor_Green, INPUT);
   pinMode(Sensor_Yellow, INPUT);
   pinMode(Sensor_Blue, INPUT);
     
-  Servo_1.attach(10);            //PWM pin assignments
-  Servo_2.attach(11);
-  Servo_start.attach(9);
+  Servo_1.attach(9);            //PWM pin assignments
+  Servo_2.attach(10);
+  Servo_start.attach(11);
   
   Servo_1.write(35);              //Servo Starting Angles
   Servo_2.write(35);

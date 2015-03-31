@@ -15,8 +15,9 @@ void setup()
 void loop()
 {
 
-  lcd.setCursor(0,1);
   lcd.clear();
+  lcd.setCursor(10,1);
+  
   lcd.print("IEEE");
   
   delay(500);

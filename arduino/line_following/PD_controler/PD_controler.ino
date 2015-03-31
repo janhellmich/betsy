@@ -52,7 +52,7 @@
 
 // define threshold Values
 #define THRESHOLD_LOW 500
-#define THRESHOLD_HIGH 1300
+#define THRESHOLD_HIGH 1100
 
 // sensor set-up according to QTR library
 QTRSensorsRC qtrrc((unsigned char[]) {32, 33, 34, 35, 36, 37 } ,NUM_SENSORS, TIMEOUT, EMITTER_PIN);  // The 4 sensors used for following a straight line are digital pins 33, 34, 35, and 36
@@ -69,8 +69,6 @@ LiquidCrystal lcd(49, 51, 53, 52, 50, 48);
 void setup()
 {
   setupMotorshield();                                         // Jump to setupMotorshield to define pins as output
-  //Serial.begin(9600);
-  //Serial.println("Serial Activated");
   //start_course();
   auto_calibrate();   // function that calibrates the line following sensor
   front_gripper(OPEN);
@@ -125,42 +123,57 @@ void loop()
     stop_motors();
     delay(5000);
     // Check for Right Turn
-    if (RS < THRESHOLD_LOW && LS > THRESHOLD_HIGH && FS > THRESHOLD_HIGH)
+    if (RS <= THRESHOLD_LOW && LS >= THRESHOLD_HIGH && FS >= THRESHOLD_HIGH)
     { 
       if (gameTurn == 1)
       {
         turnCount ++;
       }
-      else if (gameCount > 0)
+      else if (turnCount > 0)
       {
         turnCount--;
       }
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Right Turn");
       turn(RIGHT);
     }
     // Check left turn
-    else if (RS > THRESHOLD_HIGH && LS < THRESHOLD_LOW && FS > THRESHOLD_HIGH)
+    else if (RS >= THRESHOLD_HIGH && LS <= THRESHOLD_LOW && FS >= THRESHOLD_HIGH)
     {
       if (gameTurn == 1)
       {
         turnCount ++;
       }
-      else if (gameCount > 0)
+      else if (turnCount > 0)
       {
         turnCount--;
       }
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Left Turn");
       turn(LEFT);
     }
     // Check if gameturn that should be skipped
-    else if ((RS > THRESHOLD_HIGH || LS > THRESHOLD_HIGH) && tIntersection == 1)
+    else if ((RS >= THRESHOLD_HIGH || LS >= THRESHOLD_HIGH) && tIntersection == 1)
     {
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Skip Game Turn");
       drive_motor(RIGHT, FWD, BASESPEED);
       drive_motor(LEFT, FWD, BASESPEED);
+      gameTurn = 0;
       tIntersection = 0;
+      turnCount = 0;
       delay(200);
+      
     }
      // Check right game turn
-    else if (RS < THRESHOLD_LOW && LS > THRESHOLD_HIGH && FS < THRESHOLD_HIGH && gameTurn == 0)
+    else if (RS <= THRESHOLD_LOW && LS >= THRESHOLD_HIGH && FS <= THRESHOLD_HIGH && gameTurn == 0)
     {
+       lcd.clear();
+       lcd.setCursor(0,0);
+       lcd.print("Right Game Turn");
        stop_motors();
        //delay(1000);
        lastGameTurn = RIGHT;
@@ -169,8 +182,11 @@ void loop()
        turn(RIGHT);
     }  
      // Check left game turn
-    else if (RS > THRESHOLD_HIGH && LS < THRESHOLD_LOW && FS < THRESHOLD_HIGH && gameTurn == 0)
+    else if (RS >= THRESHOLD_HIGH && LS <= THRESHOLD_LOW && FS <= THRESHOLD_HIGH && gameTurn == 0)
     {
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Left Game Turn");
        stop_motors();
        //delay(1000);
        lastGameTurn = LEFT;
@@ -179,10 +195,13 @@ void loop()
        turn(LEFT);
     } 
      // Check for Game
-    else if (FS < THRESHOLD_LOW)
+    else if (FS <= THRESHOLD_LOW)
     {
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Play Game");
         stop_motors();
-        play_game();
+        //play_game();
         gameCount++;	
         follow_bwd(lastTurn);
         gameTurn = 0;
@@ -190,38 +209,42 @@ void loop()
     // T-intersection
     else 
     {
-        lcd.setCursor(0,0);
-        lcd.print("T-int");
-        delay(2000);
+      
         if (turnCount == 1) 
         {
+          lcd.clear();
+          lcd.setCursor(0,0);
+          lcd.print("T-int after game");
           turn(lastGameTurn);
           turnCount = 0;
         }
         else if (gameCount == 4)
         {
+          lcd.clear();
+          lcd.setCursor(0,0);
+          lcd.print("finish line");
           stop_motors();
           delay(10000);
         }
         else 
         {
+          lcd.clear();
+          lcd.setCursor(0,0);
+          lcd.print("T-intersection");
           tIntersection = 1;
           gameTurn = 1;
           turnCount = 1;
-      	  turn(RIGHT);
+      	  turn(LEFT);
         }
     }
-    lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print("turnCount:");
-    lcd.setCursor(13,0);
-    lcd.print(turnCount);
     lcd.setCursor(0,1);
-    lcd.print("gameTurn:");
-    lcd.setCursor(13,1);
-    lcd.print(gameTurn);
+    lcd.print(LS);
+    lcd.setCursor(12,1);
+    lcd.print(RS);
+    lcd.setCursor(6,1);
+    lcd.print(FS);
     stop_motors();
-    delay(3000);
+    delay(5000);
   }
   
 //  if ((pollingValues[1] <= 500))                            // Check to see if there is a 90 degree turn to the right
@@ -527,7 +550,7 @@ void turn(boolean dir)
     drive_motor(LEFTMOTOR, BWD, TURNSPEED);
     
     turnIndicator.read(frontPollingValues);
-    while (frontPollingValues[0] < 1000 || frontPollingValues[1] < 1000) 
+    while (frontPollingValues[0] < THRESHOLD_HIGH || frontPollingValues[1] < THRESHOLD_HIGH) 
     {
       turnIndicator.read(frontPollingValues);
       delay(100);

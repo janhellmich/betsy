@@ -4,6 +4,7 @@
 */  
 
 #include <QTRSensors.h>
+#include <LiquidCrystal.h>
 
 // define controller constants for error calculation
 #define KP 0.1                 // Proportional Control Constant
@@ -51,12 +52,13 @@
 // sensor set-up according to QTR library
 QTRSensorsRC qtrrc((unsigned char[]) {32, 33, 34, 35, 36, 37 } ,NUM_SENSORS, TIMEOUT, EMITTER_PIN);  // The 4 sensors used for following a straight line are digital pins 33, 34, 35, and 36
 QTRSensorsRC poll((unsigned char[]) {38, 31} ,NUM_POLLING_SENSORS, TIMEOUT, EMITTER_PIN);    // The 2 polling sensors for 90 degree turns are digital pins 38 and 31
-QTRSensorsRC turnIndicator((unsigned char[]) {39, 40} ,NUM_TURNING_SENSORS, TIMEOUT);        // The 2 polling sensors at the front are digital pins 39 and 40
+QTRSensorsRC turnIndicator((unsigned char[]) {43, 44} ,NUM_TURNING_SENSORS, TIMEOUT);        // The 2 polling sensors at the front are digital pins 39 and 40
 unsigned int sensorValues[NUM_SENSORS];                                                      // An array containing the sensor values for the 4 line following sensors
 unsigned int pollingValues[NUM_POLLING_SENSORS];                                             // An array containing the sensor values for the 2 polling sensors
 unsigned int frontPollingValues[NUM_TURNING_SENSORS];                                        // An array containing the sensor values for the 2 front polling sensors
 
-
+// debug lcd
+LiquidCrystal lcd(49, 51, 53, 52, 50, 48);
 /********************  SETUP  ***************************************************************************************************************/
 
 void setup()
@@ -64,10 +66,12 @@ void setup()
   setupMotorshield();                                         // Jump to setupMotorshield to define pins as output
   //Serial.begin(9600);
   //Serial.println("Serial Activated");
-  start_course();
+  //start_course();
   auto_calibrate();   // function that calibrates the line following sensor
   front_gripper(OPEN);
   delay(5000);
+  lcd.begin(16, 2);
+  lcd.clear();
   front_gripper(STOP);
 }
 // Initialize error constant and motor speeds
@@ -77,6 +81,7 @@ int leftMotorSpeed = 0;
 
 //Declare global last turn variable
 boolean lastTurn;
+boolean lastGameTurn;
 boolean gameTurn = 0;
 int gameCount = 0;
 
@@ -85,98 +90,198 @@ int gameCount = 0;
 void loop()
 { 
   //check for upcoming turns
-  poll.read(pollingValues);				    // Get polling sensor values
-  if ((pollingValues[1] <= 500))                            // Check to see if there is a 90 degree turn to the right
-  {   
-    stop_motors();     
-    delay(100);
-    turnIndicator.read(frontPollingValues);                  // Read front sensors 
-    if(frontPollingValues[0] <= 1300 || frontPollingValues[1] <= 1300) // Determine if the front sensors are seeing white
-    {
-      poll.read(pollingValues);
-      if((pollingValues[0] <= 500 || gameTurn == 1)) //Check left sensor
-      {    
-        stop_motors();
-        //Play Game
-        play_game();
-        gameCount++;
-        gameTurn = 0;	
-        follow_bwd(lastTurn);
-       }
-       else
-       {
-         //Game Turn!
-	 lastTurn = RIGHT;
-         delay(2000);
-         gameTurn = 1;
-	 turn(RIGHT);
-	}
-     }
-     else //if front sensors did not see white
-     {
-       poll.read(pollingValues); //Read sensor values
-       if((pollingValues[0] <= 500)) //Check left sensor
-       {
-         //T-Intersection
-         if (gameCount == 4)
-         {
-          stop_motors();
-          delay(10000);
-         }
-	 lastTurn = RIGHT;
-      	 turn(RIGHT);
-        }
-	else
-	{
-	  turn(RIGHT);
-	}
-      }
-  }
-  else if ((pollingValues[0] <= 500))                       // Check to see if there is a 90 degree turn to the left
-  {   
-    stop_motors();     
-    delay(100);
-    turnIndicator.read(frontPollingValues);                  // Read front sensors 
-    if(frontPollingValues[0] <= 1300 || frontPollingValues[1] <= 1300) // Determine if the front sensors are seeing white
-    {
-      poll.read(pollingValues);
-      if((pollingValues[1] <= 500 || gameTurn == 1)) //Check right sensor
-      {
-        stop_motors();
-	//Play Game
-	play_game();
-        gameCount++;
-        gameTurn = 0;	
-	follow_bwd(lastTurn);
-      }
-      else
-      {
-	lastTurn = LEFT;
-        delay(2000);
-        gameTurn = 1;
-	turn(LEFT); 
-      }
+  poll.read(pollingValues);
+  
+  
+  //attemted update of decisions
+  if (pollingValues[0] <= THRESHOLD_LOW || pollingValues[1] <= THRESHOLD_LOW)
+  {
+    // read front sensor
+    turnIndicator.read(frontPollingValues);
+    
+    // define sensor reader variables
+    int FS = frontPollingValues[0] < frontPollingValues[1] ? frontPollingValues[0] : frontPollingValues[1];
+    int RS = pollingValues[1];
+    int LS = pollingValues[0];
+    
+    // Check for Right Turn
+    if (RS < THRESHOLD_LOW && LS > THRESHOLD_HIGH && FS > THRESHOLD_HIGH)
+    { 
+      turn(RIGHT);
     }
-    else //if front sensors did not see white
+    // Check left turn
+    else if (RS > THRESHOLD_HIGH && LS < THRESHOLD_LOW && FS > THRESHOLD_HIGH)
     {
-      poll.read(pollingValues);
-      if((pollingValues[1] <= 500)) //Check right sensor
-      {
-	//T-Intersection
-        if (gameCount == 4)
+       turn(LEFT);
+    }
+     // Check right game turn
+    else if (RS < THRESHOLD_LOW && LS > THRESHOLD_HIGH && FS < THRESHOLD_HIGH)
+    {
+       lastGameTurn = RIGHT;
+       //gameTurn = 1;
+       turn(RIGHT);
+    }  
+     // Check left game turn
+    else if (RS > THRESHOLD_HIGH && LS < THRESHOLD_LOW && FS < THRESHOLD_HIGH)
+    {
+       lastGameTurn = LEFT;
+       //gameTurn = 1;
+       turn(LEFT);
+    } 
+     // Check for Game
+    else if (RS < THRESHOLD_HIGH && LS < THRESHOLD_HIGH && FS < THRESHOLD_HIGH)
+    {
+        stop_motors();
+        play_game();
+        gameCount++;	
+        follow_bwd(lastTurn);
+    } 
+    // T-intersection
+    else if (RS < THRESHOLD_HIGH && LS < THRESHOLD_HIGH && FS > THRESHOLD_HIGH)
+    {
+
+        if (gameTurn == 1) 
+        {
+          turn(lastGameTurn);
+          gameTurn = 0;
+        }
+        else if (gameCount == 4)
         {
           stop_motors();
           delay(10000);
         }
-	lastTurn = LEFT;
-        turn(LEFT);        
-      }
-      else
-      {
-	turn(LEFT);
-      }
-     }
-   }
+        else 
+        {
+      	  turn(RIGHT);
+        }
+    }
+    
+  
+//  if ((pollingValues[1] <= 500))                            // Check to see if there is a 90 degree turn to the right
+//  {   
+//    stop_motors();     
+//    delay(100);
+//    turnIndicator.read(frontPollingValues);                  // Read front sensors 
+//    if(frontPollingValues[0] <= 1300 || frontPollingValues[1] <= 1300) // Determine if the front sensors are seeing white
+//    {
+//      poll.read(pollingValues);
+//      if((pollingValues[0] <= 500 || gameTurn == 1)) //Check left sensor
+//      {    
+//        stop_motors();
+//        //Play Game
+//                lcd.setCursor(0,1);
+//        lcd.clear();
+//        lcd.print("Game");
+//        play_game();
+//        gameCount++;	
+//        follow_bwd(lastTurn);
+//
+//       }
+//       else
+//       {
+//         //Game Turn!
+//          lcd.setCursor(0,1);
+//        lcd.clear();
+//        lcd.print("Game Turn");
+//	 lastTurn = RIGHT;
+//         delay(2000);
+//         gameTurn = 1;
+//	 turn(RIGHT);
+//       
+//	}
+//     }
+//     else //if front sensors did not see white
+//     {
+//       poll.read(pollingValues); //Read sensor values
+//       if((pollingValues[0] <= 500)) //Check left sensor
+//       {
+//         //T-Intersection
+//         lcd.setCursor(0,1);
+//         lcd.clear();
+//         lcd.print("T-int");
+//         if (gameTurn == 1) 
+//         {
+//           turn(lastTurn);
+//           gameTurn = 0;
+//         }
+//         if (gameCount == 4)
+//         {
+//          stop_motors();
+//          delay(10000);
+//         }
+//	 lastTurn = RIGHT;
+//      	 turn(RIGHT);
+//        }
+//	else
+//	{
+//          lcd.setCursor(0,1);
+//          lcd.clear();
+//          lcd.print("normal turn");
+//	  turn(RIGHT);
+//	}
+//      }
+//  }
+//  else if ((pollingValues[0] <= 500))                       // Check to see if there is a 90 degree turn to the left
+//  {   
+//    stop_motors();     
+//    delay(100);
+//    turnIndicator.read(frontPollingValues);                  // Read front sensors 
+//    if(frontPollingValues[0] <= 1300 || frontPollingValues[1] <= 1300) // Determine if the front sensors are seeing white
+//    {
+//      poll.read(pollingValues);
+//      if((pollingValues[1] <= 500 || gameTurn == 1)) //Check right sensor
+//      {
+//        stop_motors();
+//                lcd.setCursor(0,1);
+//        lcd.clear();
+//        lcd.print("Game");
+//	//Play Game
+//	play_game();
+//        gameCount++;	
+//	follow_bwd(lastTurn);
+//      }
+//      else
+//      {
+//                lcd.setCursor(0,1);
+//        lcd.clear();
+//        lcd.print("Game Turn");
+//	lastTurn = LEFT;
+//        delay(2000);
+//        gameTurn = 1;
+//	turn(LEFT); 
+//      }
+//    }
+//    else //if front sensors did not see white
+//    {
+//      poll.read(pollingValues);
+//      if((pollingValues[1] <= 500)) //Check right sensor
+//      {
+//	//T-Intersection
+//        lcd.setCursor(0,1);
+//        lcd.clear();
+//        lcd.print("T-int");
+//        if (gameTurn == 1) 
+//         {
+//           turn(lastTurn);
+//           gameTurn = 0;
+//         }
+//        if (gameCount == 4)
+//        {
+//          stop_motors();
+//          delay(10000);
+//        }
+//	lastTurn = LEFT;
+//        turn(LEFT);        
+//      }
+//      else
+//      {
+//                lcd.setCursor(0,1);
+//        lcd.clear();
+//        lcd.print("normal turn");
+//	turn(LEFT);
+//      }
+//     }
+//   }
   // If there is no detected line on either polling sensor, continue with the PD Line Following
   { 
      
@@ -317,6 +422,7 @@ void reset_motor_speeds()
 // initiate a turn: specify direction
 void turn(boolean dir)
 {
+  lastTurn = dir;
   if (dir == RIGHT)
   {
     drive_motor(RIGHTMOTOR, BWD, BASESPEED);

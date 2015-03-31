@@ -17,7 +17,7 @@
 #define EMITTER_PIN   30     // emitter is controlled by digital pin 2
 
 // sensors 0 through 7 are connected to digital pins 3 through 10, respectively
-QTRSensorsRC qtrrc((unsigned char[]) {31, 32, 33, 34, 35, 36, 50, 51},
+QTRSensorsRC qtrrc((unsigned char[]) {31, 32, 33, 34, 35, 36, 37, 38},
   NUM_SENSORS, TIMEOUT, EMITTER_PIN); 
 unsigned int sensorValues[NUM_SENSORS];
 

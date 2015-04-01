@@ -8,7 +8,7 @@
 
 // define controller constants for error calculation
 #define KP 1                      // Proportional Control Constant
-#define KD 50                       // Derivative Control Constant. ( Note: KP < KD)
+#define KD 100                       // Derivative Control Constant. ( Note: KP < KD)
 
 //define Max- and Basespeed
 #define MAXSPEED 100          
@@ -121,7 +121,7 @@ void loop()
     lcd.setCursor(6,1);
     lcd.print(FS);
     stop_motors();
-    delay(5000);
+    //delay(5000);
     // Check for Right Turn
     if (RS <= THRESHOLD_LOW && LS >= THRESHOLD_HIGH && FS >= THRESHOLD_HIGH)
     { 
@@ -201,9 +201,8 @@ void loop()
       lcd.setCursor(0,0);
       lcd.print("Play Game");
         stop_motors();
-        //play_game();
-        gameCount++;	
-        follow_bwd(lastTurn);
+        gameCount++;
+        play_game(gameCount);	
         gameTurn = 0;
     } 
     // T-intersection
@@ -234,7 +233,7 @@ void loop()
           tIntersection = 1;
           gameTurn = 1;
           turnCount = 1;
-      	  turn(LEFT);
+      	  turn(RIGHT);
         }
     }
     lcd.setCursor(0,1);
@@ -244,7 +243,7 @@ void loop()
     lcd.setCursor(6,1);
     lcd.print(FS);
     stop_motors();
-    delay(5000);
+    //delay(5000);
   }
   
 //  if ((pollingValues[1] <= 500))                            // Check to see if there is a 90 degree turn to the right
@@ -670,7 +669,40 @@ void front_gripper(int action)
 
 /********************* PLAY GAME ************************************************************************/    
 
-void play_game()
+void play_game(int gameCount) 
+{
+  switch(gameCount){
+    case 1:
+    {
+      play_simon();
+      break;
+    }
+    case 2:
+    {
+      play_front_gripper();
+      follow_bwd(lastTurn);
+      break;
+    }
+    case 3:
+    {
+      play_front_gripper();
+      follow_bwd(lastTurn);
+      break;
+    }
+    case 4:
+    {
+      play_front_gripper();
+      follow_bwd(lastTurn);
+      break;
+    }
+
+  }
+}
+
+
+/********************* PLAY FRONT GRIPPER ************************************************************************/ 
+
+void play_front_gripper()
 {
   front_gripper(CLOSE);
   delay(6000);
@@ -694,6 +726,43 @@ void play_game()
   delay(500);
   
 }
+
+/********************* PLAY SIMON ************************************************************************/  
+
+void play_simon()
+{
+  turnIndicator.read(frontPollingValues);
+  drive_motor(RIGHT, FWD, 50);
+  drive_motor(LEFT, BWD, 50);
+  while (frontPollingValues[0] <= THRESHOLD_HIGH && frontPollingValues[1] <= THRESHOLD_HIGH) {
+    turnIndicator.read(frontPollingValues);
+    delay(20);
+  }
+  turnIndicator.read(frontPollingValues);
+  while (frontPollingValues[0] >= 300 || frontPollingValues[1] >= 300)
+  {
+    turnIndicator.read(frontPollingValues);
+    delay(2);
+  }
+  
+  drive_motor(RIGHT, BWD, 30);
+  drive_motor(LEFT, BWD, 30);
+  delay(1000);
+  stop_motors();
+  delay(5000);
+  
+  drive_motor(RIGHT, FWD, 30);
+  drive_motor(LEFT, FWD, 30);
+  poll.read(pollingValues);
+  while (pollingValues[0] <= THRESHOLD_HIGH || pollingValues[1] <= THRESHOLD_HIGH)
+  {
+    poll.read(pollingValues);
+    delay(20);
+  }
+  delay(100);
+  
+}
+
 /********************* END OF PROGRAM ************************************************************************/    
 
 

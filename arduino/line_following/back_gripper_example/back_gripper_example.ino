@@ -42,11 +42,30 @@ void loop()
     backGripper.write(i);
     delay(10);
   }
+  
+  reset_gripper();
+
+  drive_motor(RIGHT, BWD, 30);
+  drive_motor(LEFT, BWD, 30);
+  delay(200);
+  
+  stop_motors();
+  
+  for (int i = 0; i < 180; i++) 
+  {
+    backGripper.write(i);
+    delay(10);
+  }
+  
   delay(5000);
   
   reset_gripper();
   
   delay(5000);  
+  
+  drive_motor(RIGHT, FWD, 30);
+  drive_motor(LEFT, FWD, 30);
+  delay(2000);
   
 }
 

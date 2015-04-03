@@ -13,7 +13,7 @@ int Press_1 = 0;
 int Press_2 = 0;
 int Press_3 = 0;
 
-const int Sensor_Red = 0;    //analog pin assignments
+const int Sensor_Red = 4;    //analog pin assignments
 const int Sensor_Green = 1;   
 const int Sensor_Yellow = 2; 
 const int Sensor_Blue = 3;  
@@ -66,9 +66,9 @@ void setup()
   pinMode(Sensor_Yellow, INPUT);
   pinMode(Sensor_Blue, INPUT);
     
-  Servo_1.attach(9);            //PWM pin assignments
-  Servo_2.attach(10);
-  Servo_start.attach(11);
+  Servo_1.attach(10);            //PWM pin assignments
+  Servo_2.attach(11);
+  Servo_start.attach(9);
   
   Servo_1.write(35);              //Servo Starting Angles
   Servo_2.write(35);

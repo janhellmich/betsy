@@ -5,6 +5,7 @@
 
 #include <QTRSensors.h>
 #include <LiquidCrystal.h>
+#include <Servo.h>
 
 // define controller constants for error calculation
 #define KP 1                      // Proportional Control Constant
@@ -57,22 +58,26 @@
 // sensor set-up according to QTR library
 QTRSensorsRC qtrrc((unsigned char[]) {32, 33, 34, 35, 36, 37 } ,NUM_SENSORS, TIMEOUT, EMITTER_PIN);  // The 4 sensors used for following a straight line are digital pins 33, 34, 35, and 36
 QTRSensorsRC poll((unsigned char[]) {38, 31} ,NUM_POLLING_SENSORS, TIMEOUT, EMITTER_PIN);    // The 2 polling sensors for 90 degree turns are digital pins 38 and 31
-QTRSensorsRC turnIndicator((unsigned char[]) {43, 44} ,NUM_TURNING_SENSORS, TIMEOUT);        // The 2 polling sensors at the front are digital pins 39 and 40
+QTRSensorsRC turnIndicator((unsigned char[]) {39, 40} ,NUM_TURNING_SENSORS, TIMEOUT);        // The 2 polling sensors at the front are digital pins 39 and 40
 unsigned int sensorValues[NUM_SENSORS];                                                      // An array containing the sensor values for the 4 line following sensors
 unsigned int pollingValues[NUM_POLLING_SENSORS];                                             // An array containing the sensor values for the 2 polling sensors
 unsigned int frontPollingValues[NUM_TURNING_SENSORS];                                        // An array containing the sensor values for the 2 front polling sensors
 
 // debug lcd
 LiquidCrystal lcd(49, 51, 53, 52, 50, 48);
+
+Servo backGripper;
 /********************  SETUP  ***************************************************************************************************************/
 
 void setup()
 {
-  setupMotorshield();                                         // Jump to setupMotorshield to define pins as output
+  setupMotorshield();  // Jump to setupMotorshield to define pins as output
+  backGripper.attach(4);
+  backGripper.write(0);
   //start_course();
   auto_calibrate();   // function that calibrates the line following sensor
   front_gripper(OPEN);
-  delay(5000);
+  delay(1000);
   lcd.begin(16, 2);
   lcd.clear();
   front_gripper(STOP);
@@ -89,6 +94,9 @@ boolean gameTurn = 0;
 boolean tIntersection = 0;
 int turnCount = 0;
 int gameCount = 0;
+
+
+
 
 /******************   MAIN LOOP   ***************************************************************************************************************/
 int c = 0;
@@ -730,7 +738,8 @@ void play_front_gripper()
 /********************* PLAY SIMON ************************************************************************/  
 
 void play_simon()
-{
+{ 
+  
   turnIndicator.read(frontPollingValues);
   drive_motor(RIGHT, FWD, 50);
   drive_motor(LEFT, BWD, 50);
@@ -747,13 +756,27 @@ void play_simon()
   
   drive_motor(RIGHT, BWD, 30);
   drive_motor(LEFT, BWD, 30);
+  
+  
   delay(1000);
   stop_motors();
+  
+  
+  for (int i = 0; i < 180; i++) 
+  {
+    backGripper.write(i);
+    delay(10);
+  }
   delay(5000);
+  
+
+  
   
   drive_motor(RIGHT, FWD, 30);
   drive_motor(LEFT, FWD, 30);
+  
   poll.read(pollingValues);
+  
   while (pollingValues[0] <= THRESHOLD_HIGH || pollingValues[1] <= THRESHOLD_HIGH)
   {
     poll.read(pollingValues);

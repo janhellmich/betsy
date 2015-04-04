@@ -26,9 +26,14 @@
 //define photoresitor pin
 #define PHOTORESITORPIN 0
 
+//define communication pins
+#define UNO_PIN_BOTTOM_OUT 47
+#define UNO_PIN_BOTTOM_IN 44
+
+
 //define Front Gripper Pins
-#define FGRIPPER1 41
-#define FGRIPPER2 42
+#define FGRIPPER1 42
+#define FGRIPPER2 41
 
 //define constants for motor shield pin assignments
 #define STBY 24
@@ -99,7 +104,7 @@ int gameCount = 0;
 
 
 /******************   MAIN LOOP   ***************************************************************************************************************/
-int c = 0;
+
 void loop()
 { 
   //check for upcoming turns
@@ -129,7 +134,7 @@ void loop()
     lcd.setCursor(6,1);
     lcd.print(FS);
     stop_motors();
-    //delay(5000);
+    
     // Check for Right Turn
     if (RS <= THRESHOLD_LOW && LS >= THRESHOLD_HIGH && FS >= THRESHOLD_HIGH)
     { 
@@ -254,144 +259,13 @@ void loop()
     //delay(5000);
   }
   
-//  if ((pollingValues[1] <= 500))                            // Check to see if there is a 90 degree turn to the right
-//  {   
-//    stop_motors();     
-//    delay(100);
-//    turnIndicator.read(frontPollingValues);                  // Read front sensors 
-//    if(frontPollingValues[0] <= 1300 || frontPollingValues[1] <= 1300) // Determine if the front sensors are seeing white
-//    {
-//      poll.read(pollingValues);
-//      if((pollingValues[0] <= 500 || gameTurn == 1)) //Check left sensor
-//      {    
-//        stop_motors();
-//        //Play Game
-//                lcd.setCursor(0,1);
-//        lcd.clear();
-//        lcd.print("Game");
-//        play_game();
-//        gameCount++;	
-//        follow_bwd(lastTurn);
-//
-//       }
-//       else
-//       {
-//         //Game Turn!
-//          lcd.setCursor(0,1);
-//        lcd.clear();
-//        lcd.print("Game Turn");
-//	 lastTurn = RIGHT;
-//         delay(2000);
-//         gameTurn = 1;
-//	 turn(RIGHT);
-//       
-//	}
-//     }
-//     else //if front sensors did not see white
-//     {
-//       poll.read(pollingValues); //Read sensor values
-//       if((pollingValues[0] <= 500)) //Check left sensor
-//       {
-//         //T-Intersection
-//         lcd.setCursor(0,1);
-//         lcd.clear();
-//         lcd.print("T-int");
-//         if (gameTurn == 1) 
-//         {
-//           turn(lastTurn);
-//           gameTurn = 0;
-//         }
-//         if (gameCount == 4)
-//         {
-//          stop_motors();
-//          delay(10000);
-//         }
-//	 lastTurn = RIGHT;
-//      	 turn(RIGHT);
-//        }
-//	else
-//	{
-//          lcd.setCursor(0,1);
-//          lcd.clear();
-//          lcd.print("normal turn");
-//	  turn(RIGHT);
-//	}
-//      }
-//  }
-//  else if ((pollingValues[0] <= 500))                       // Check to see if there is a 90 degree turn to the left
-//  {   
-//    stop_motors();     
-//    delay(100);
-//    turnIndicator.read(frontPollingValues);                  // Read front sensors 
-//    if(frontPollingValues[0] <= 1300 || frontPollingValues[1] <= 1300) // Determine if the front sensors are seeing white
-//    {
-//      poll.read(pollingValues);
-//      if((pollingValues[1] <= 500 || gameTurn == 1)) //Check right sensor
-//      {
-//        stop_motors();
-//                lcd.setCursor(0,1);
-//        lcd.clear();
-//        lcd.print("Game");
-//	//Play Game
-//	play_game();
-//        gameCount++;	
-//	follow_bwd(lastTurn);
-//      }
-//      else
-//      {
-//                lcd.setCursor(0,1);
-//        lcd.clear();
-//        lcd.print("Game Turn");
-//	lastTurn = LEFT;
-//        delay(2000);
-//        gameTurn = 1;
-//	turn(LEFT); 
-//      }
-//    }
-//    else //if front sensors did not see white
-//    {
-//      poll.read(pollingValues);
-//      if((pollingValues[1] <= 500)) //Check right sensor
-//      {
-//	//T-Intersection
-//        lcd.setCursor(0,1);
-//        lcd.clear();
-//        lcd.print("T-int");
-//        if (gameTurn == 1) 
-//         {
-//           turn(lastTurn);
-//           gameTurn = 0;
-//         }
-//        if (gameCount == 4)
-//        {
-//          stop_motors();
-//          delay(10000);
-//        }
-//	lastTurn = LEFT;
-//        turn(LEFT);        
-//      }
-//      else
-//      {
-//                lcd.setCursor(0,1);
-//        lcd.clear();
-//        lcd.print("normal turn");
-//	turn(LEFT);
-//      }
-//     }
-//   }
+
   // If there is no detected line on either polling sensor, continue with the PD Line Following
   { 
      
     int positioning = qtrrc.readLine(sensorValues,QTR_EMITTERS_ON, 1);                       // Get calibrated readings along with the line position
     int error = positioning - 2500;         // Determine the error from the calculated position
     
-//    if (c % 25 == 0)
-//    {
-//      lcd.clear();
-//      lcd.setCursor(0,0);
-//      lcd.print(positioning);
-//    }
-    c++;
     int motorSpeed = KP * error + KD * (error - lastError);                // Adjust motorspeed according to constants KP and KD
     lastError = error;                                                     // Update last error to compare to next error
   
@@ -418,6 +292,8 @@ void loop()
 // This function sets up the pins
 void setupMotorshield()
 {
+  
+  // drive motors
   pinMode(STBY, OUTPUT);
   pinMode(RIGHTMOTORFORWARD, OUTPUT);
   pinMode(RIGHTMOTORBACKWARD, OUTPUT);
@@ -425,14 +301,23 @@ void setupMotorshield()
   pinMode(LEFTMOTORFORWARD, OUTPUT);
   pinMode(LEFTMOTORBACKWARD, OUTPUT);
   pinMode(LEFTMOTORPWM, OUTPUT);
-  pinMode(FGRIPPER1, OUTPUT);
-  pinMode(FGRIPPER2, OUTPUT);
   
   digitalWrite(STBY, HIGH);
   digitalWrite(RIGHTMOTORFORWARD, HIGH);
   digitalWrite(RIGHTMOTORBACKWARD, LOW);
   digitalWrite(LEFTMOTORFORWARD, HIGH);
   digitalWrite(LEFTMOTORBACKWARD, LOW);
+  
+  // front gripper 
+  pinMode(FGRIPPER1, OUTPUT);
+  pinMode(FGRIPPER2, OUTPUT);
+  
+  // communication pins
+  
+  pinMode(UNO_PIN_BOTTOM_OUT, OUTPUT);
+  pinMode(UNO_PIN_BOTTOM_IN, INPUT);
+  
+ 
 }
 
 /*************************** AUTO-CALIBRATE *****************************************************************************/
@@ -466,6 +351,24 @@ void auto_calibrate()
     qtrrc.calibratedMinimumOn[i] = calMin;
     qtrrc.calibratedMaximumOn[i] = calMax;
   }
+}
+
+
+/*********************** START OF THE GAME ************************************************************************/    
+
+void start_course() 
+{
+  int currentRead =analogRead(PHOTORESITORPIN);
+  while (currentRead < 500) 
+  {
+    currentRead = analogRead(PHOTORESITORPIN);
+    delay(20);
+  }
+  poll.read(pollingValues);
+  drive_motor(RIGHT, FWD, BASESPEED);
+  drive_motor(LEFT, FWD, BASESPEED);
+  delay(900);
+  stop_motors();
 }
 
 /************************** DRIVE MOTORS **********************************************************************/
@@ -533,7 +436,7 @@ void turn(boolean dir)
     drive_motor(LEFTMOTOR, FWD, TURNSPEED);
     
     turnIndicator.read(frontPollingValues);
-    while (frontPollingValues[1] < 1000 || frontPollingValues[0] < 1000) 
+    while (frontPollingValues[1] < THRESHOLD_HIGH || frontPollingValues[0] < THRESHOLD_HIGH) 
     {
       turnIndicator.read(frontPollingValues);
       delay(100);
@@ -541,13 +444,12 @@ void turn(boolean dir)
     while (true)
     {
       turnIndicator.read(frontPollingValues);
-      if (frontPollingValues[0] < 500 && frontPollingValues[1] < 500)
+      if (frontPollingValues[0] < THRESHOLD_LOW && frontPollingValues[1] < THRESHOLD_LOW)
       {
-        delay(15);            //This delay helps avoid false positives
+        delay(5);           
         stop_motors();
         break;
       }
-      delay(50);
     }
   }
   
@@ -565,9 +467,9 @@ void turn(boolean dir)
     while (true)
     {
       turnIndicator.read(frontPollingValues);
-      if (frontPollingValues[0] < 500 && frontPollingValues[1] < 500)
+      if (frontPollingValues[0] < THRESHOLD_LOW && frontPollingValues[1] < THRESHOLD_LOW)
       {
-        delay(15);                      //This delay helps avoid false positives
+        delay(5);                      
         stop_motors();
         break;
       }
@@ -583,7 +485,7 @@ void turn(boolean dir)
 //function to follow line bwds after playing a game
 void follow_bwd(boolean dir)
 {
-  while (pollingValues[0] < 1000 || pollingValues[1] < 1000)
+  while (pollingValues[0] < THRESHOLD_HIGH || pollingValues[1] < THRESHOLD_HIGH)
   {
     poll.read(pollingValues);
     
@@ -633,22 +535,6 @@ void follow_bwd(boolean dir)
 }
 
 
-/*********************** START OF THE GAME ************************************************************************/    
-
-void start_course() 
-{
-  int currentRead =analogRead(PHOTORESITORPIN);
-  while (currentRead < 500) 
-  {
-    currentRead = analogRead(PHOTORESITORPIN);
-    delay(20);
-  }
-  poll.read(pollingValues);
-  drive_motor(RIGHT, FWD, BASESPEED);
-  drive_motor(LEFT, FWD, BASESPEED);
-  delay(900);
-  stop_motors();
-}
 
 /************************ FRONT GRIPPER **********************************************************************/
 
@@ -675,6 +561,39 @@ void front_gripper(int action)
   
 }
 
+/********************* FRONT GRIPPER ACTIONS ************************************************************************/ 
+
+// grip game
+void grip_game(int millisec)
+{
+  front_gripper(CLOSE);
+  delay(millisec);
+  
+  front_gripper(OPEN);
+  delay(500);
+ 
+  drive_motor(RIGHT, FWD, 20); 
+  drive_motor(LEFT, FWD, 20); 
+  delay(500);
+  
+  stop_motors();
+  
+  front_gripper(CLOSE);  
+}
+
+// let go of game
+void ungrip_game(int millisec)
+{
+  front_gripper(OPEN);
+  delay(millisec);
+  
+  drive_motor(RIGHT, BWD, 30); 
+  drive_motor(LEFT, BWD, 30); 
+  
+  delay(500);
+}
+
+
 /********************* PLAY GAME ************************************************************************/    
 
 void play_game(int gameCount) 
@@ -687,19 +606,17 @@ void play_game(int gameCount)
     }
     case 2:
     {
-      play_front_gripper();
+      play_etch_a_sketch();
       follow_bwd(lastTurn);
       break;
     }
     case 3:
     {
-      play_front_gripper();
       follow_bwd(lastTurn);
       break;
     }
     case 4:
     {
-      play_front_gripper();
       follow_bwd(lastTurn);
       break;
     }
@@ -707,33 +624,6 @@ void play_game(int gameCount)
   }
 }
 
-
-/********************* PLAY FRONT GRIPPER ************************************************************************/ 
-
-void play_front_gripper()
-{
-  front_gripper(CLOSE);
-  delay(6000);
-  
-  front_gripper(OPEN);
-  delay(500);
- 
-  drive_motor(RIGHT, FWD, 30); 
-  drive_motor(LEFT, FWD, 30); 
-  delay(500);
-  stop_motors();
-  
-  front_gripper(CLOSE);
-  delay(6000);
-  
-  front_gripper(OPEN);
-  delay(5000);
-  
-  drive_motor(RIGHT, BWD, 30); 
-  drive_motor(LEFT, BWD, 30); 
-  delay(500);
-  
-}
 
 /********************* PLAY SIMON ************************************************************************/  
 
@@ -748,7 +638,7 @@ void play_simon()
     delay(20);
   }
   turnIndicator.read(frontPollingValues);
-  while (frontPollingValues[0] >= 300 || frontPollingValues[1] >= 300)
+  while (frontPollingValues[0] >= THRESHOLD_LOW || frontPollingValues[1] >= THRESHOLD_LOW)
   {
     turnIndicator.read(frontPollingValues);
     delay(2);
@@ -769,8 +659,13 @@ void play_simon()
   }
   delay(5000);
   
-
+  for (int i = 180; i > 0; i--) 
+  {
+    backGripper.write(i);
+    delay(5);
+  }
   
+  backGripper.detach();
   
   drive_motor(RIGHT, FWD, 30);
   drive_motor(LEFT, FWD, 30);
@@ -785,6 +680,26 @@ void play_simon()
   delay(100);
   
 }
+
+/********************* PLAY ETCH A SKETCH  ************************************************************************/  
+
+void play_etch_a_sketch()
+{
+   
+  // Grip the Game
+  grip_game(3000);
+  
+  // sent signal to UNO
+  digitalWrite(UNO_PIN_BOTTOM_OUT, HIGH);
+  
+  // wait for Uno to finish
+  while (digitalRead(UNO_PIN_BOTTOM_IN) == LOW)
+  {}
+  
+  ungrip_game(3000);
+  
+}
+  
 
 /********************* END OF PROGRAM ************************************************************************/    
 

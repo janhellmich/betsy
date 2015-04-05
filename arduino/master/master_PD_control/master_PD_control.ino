@@ -30,6 +30,9 @@
 #define UNO_PIN_BOTTOM_OUT 47
 #define UNO_PIN_BOTTOM_IN 44
 
+#define UNO_PIN_TOP_OUT 46
+#define UNO_PIN_TOP_IN 43
+
 
 //define Front Gripper Pins
 #define FGRIPPER1 42
@@ -316,8 +319,11 @@ void setupMotorshield()
   
   pinMode(UNO_PIN_BOTTOM_OUT, OUTPUT);
   pinMode(UNO_PIN_BOTTOM_IN, INPUT);
+  digitalWrite(UNO_PIN_BOTTOM_OUT, LOW);
   
- 
+  pinMode(UNO_PIN_TOP_OUT, OUTPUT);
+  pinMode(UNO_PIN_TOP_IN, INPUT);
+  digitalWrite(UNO_PIN_TOP_OUT, LOW);
 }
 
 /*************************** AUTO-CALIBRATE *****************************************************************************/
@@ -601,7 +607,8 @@ void play_game(int gameCount)
   switch(gameCount){
     case 1:
     {
-      play_simon();
+      play_rubiks_cube();
+      follow_bwd(lastTurn);
       break;
     }
     case 2:
@@ -702,7 +709,25 @@ void play_etch_a_sketch()
   ungrip_game(3000);
   
 }
+
+/********************* PLAY RUBIKS CUBE  ************************************************************************/   
+ 
+void play_rubiks_cube()
+{
+   // Grip the Game
+  grip_game(5000);
   
+  // sent signal to UNO
+  digitalWrite(UNO_PIN_TOP_OUT, HIGH);
+  delay(1000);
+  digitalWrite(UNO_PIN_TOP_OUT, LOW);
+  // wait for Uno to finish
+  while (digitalRead(UNO_PIN_TOP_IN) == LOW)
+  {}
+  
+  ungrip_game(5000);
+  
+}
 /********************* PICK UP CARD  ************************************************************************/  
 
 void pick_up_card()

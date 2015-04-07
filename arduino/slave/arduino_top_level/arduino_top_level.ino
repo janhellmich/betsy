@@ -7,10 +7,13 @@
 
 // pin assignment 
 #define PIN_RK_ARM 11
-#define RK_ARM_START 180
+#define PIN_RK_TURN 10
+
+#define RK_ARM_START 150
 #define RK_ARM_FINISH 50
 
-#define PIN_RK_TURN 10
+#define RK_TURN_START 8 
+#define RK_TURN_FINISH 108
 
 // SIMON SAYS CONSTANTS
 
@@ -44,7 +47,7 @@ void setup()
   rkArm.write(RK_ARM_START);
   
   rkTurn.attach(PIN_RK_TURN);
-  rkTurn.write(0);
+  rkTurn.write(RK_TURN_START);
   
 }
 
@@ -91,6 +94,12 @@ void finished()
 
 void play_rubiks_cube()
 {
+  
+  // attach servos 
+  rkArm.attach(PIN_RK_ARM);
+  rkTurn.attach(PIN_RK_TURN);
+  
+  
   //lower arm
   for (int i = RK_ARM_START; i > RK_ARM_FINISH; i--)
   {
@@ -99,20 +108,64 @@ void play_rubiks_cube()
   }
   
   // turn row
-  for (int i = 0; i <= 180; i++)
+  for (int i = RK_TURN_START; i <= RK_TURN_FINISH; i++)
   {
     rkTurn.write(i);
     delay(15);
   }
-  rkTurn.detach();
   
   // raise arm
-  for (int i = RK_ARM_FINISH; i < RK_ARM_START; i++)
+  for (int i = RK_ARM_FINISH; i < RK_ARM_FINISH + 15; i++)
   {
     rkArm.write(i);
     delay(15);
   }
   
+  // turn back
+  for (int i = RK_TURN_FINISH; i >= RK_TURN_START; i--)
+  {
+    rkTurn.write(i);
+    delay(15);
+  }
+  
+  // lower arm
+  for (int i = RK_ARM_FINISH + 15; i > RK_ARM_FINISH; i--)
+  {
+    rkArm.write(i);
+    delay(15);
+  }
+  
+  // turn row
+  for (int i = RK_TURN_START; i <= RK_TURN_FINISH; i++)
+  {
+    rkTurn.write(i);
+    delay(15);
+  }
+  
+  // raise arm
+  for (int i = RK_ARM_FINISH; i < RK_ARM_FINISH + 15; i++)
+  {
+    rkArm.write(i);
+    delay(15);
+  }
+  
+  // turn back
+  for (int i = RK_TURN_FINISH; i >= RK_TURN_START; i--)
+  {
+    rkTurn.write(i);
+    delay(15);
+  }
+  
+  rkTurn.detach();
+  
+  // raise arm
+  for (int i = RK_ARM_FINISH +15; i < RK_ARM_START; i++)
+  {
+    rkArm.write(i);
+    delay(15);
+  }
+  
+  rkArm.detach();
+  
   
 }
-  

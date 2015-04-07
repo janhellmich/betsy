@@ -61,7 +61,7 @@
 
 // define threshold Values
 #define THRESHOLD_LOW 500
-#define THRESHOLD_HIGH 1100
+#define THRESHOLD_HIGH 900
 
 // sensor set-up according to QTR library
 QTRSensorsRC qtrrc((unsigned char[]) {32, 33, 34, 35, 36, 37 } ,NUM_SENSORS, TIMEOUT, EMITTER_PIN);  // The 4 sensors used for following a straight line are digital pins 33, 34, 35, and 36
@@ -85,10 +85,10 @@ void setup()
   //start_course();
   auto_calibrate();   // function that calibrates the line following sensor
   front_gripper(OPEN);
-  delay(5000);
+
   lcd.begin(16, 2);
   lcd.clear();
-  front_gripper(STOP);
+  
 }
 // Initialize error constant and motor speeds
 int lastError = 0;      
@@ -435,6 +435,7 @@ void reset_motor_speeds()
 // initiate a turn: specify direction
 void turn(boolean dir)
 {
+  
   lastTurn = dir;
   if (dir == RIGHT)
   {
@@ -445,7 +446,7 @@ void turn(boolean dir)
     while (frontPollingValues[1] < THRESHOLD_HIGH || frontPollingValues[0] < THRESHOLD_HIGH) 
     {
       turnIndicator.read(frontPollingValues);
-      delay(100);
+      delay(15);
     }
     while (true)
     {
@@ -468,7 +469,7 @@ void turn(boolean dir)
     while (frontPollingValues[0] < THRESHOLD_HIGH || frontPollingValues[1] < THRESHOLD_HIGH) 
     {
       turnIndicator.read(frontPollingValues);
-      delay(100);
+      delay(15);
     }
     while (true)
     {
@@ -481,6 +482,7 @@ void turn(boolean dir)
       }
     }
   }
+ 
   drive_motor(RIGHTMOTOR, FWD, BASESPEED);
   drive_motor(LEFTMOTOR, FWD, BASESPEED);
   delay(200);
@@ -588,10 +590,10 @@ void grip_game(int millisec)
 }
 
 // let go of game
-void ungrip_game(int millisec)
+void ungrip_game()
 {
   front_gripper(OPEN);
-  delay(millisec);
+  delay(200);
   
   drive_motor(RIGHT, BWD, 30); 
   drive_motor(LEFT, BWD, 30); 
@@ -706,7 +708,7 @@ void play_etch_a_sketch()
   while (digitalRead(UNO_PIN_BOTTOM_IN) == LOW)
   {}
   
-  ungrip_game(3000);
+  ungrip_game();
   
 }
 
@@ -725,7 +727,7 @@ void play_rubiks_cube()
   while (digitalRead(UNO_PIN_TOP_IN) == LOW)
   {}
   
-  ungrip_game(5000);
+  ungrip_game();
   
 }
 /********************* PICK UP CARD  ************************************************************************/  

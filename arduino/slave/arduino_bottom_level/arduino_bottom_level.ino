@@ -1,21 +1,29 @@
 #include <Servo.h>
 
-#define PIN_ARMS 3
-#define PIN_LEFT_KNOB 9
+// pin assignment
+#define PIN_ARMS       3
+#define PIN_LEFT_KNOB  9
 #define PIN_RIGHT_KNOB 6
 
-#define SIGNAL_IN 8
-#define SIGNAL_OUT 12
+// arm constants
+#define ARMS_START 180
+#define ARMS_FINISH 77
 
-Servo Arms;
+// communication
+#define SIGNAL_IN      8
+#define SIGNAL_OUT     12
+
+
+
+Servo arms;
 Servo leftKnob;
 Servo rightKnob;
 
 // create drawing direction indicators. Servo 2 should be acting on the up/down direction
-int UP = 2;
-int DOWN = 1;
+int UP    = 2;
+int DOWN  = 1;
 int RIGHT = 4;
-int LEFT = 3;
+int LEFT  = 3;
 
 
 // set null speed for both servos
@@ -30,9 +38,12 @@ void setup()
   pinMode(SIGNAL_IN, INPUT);
   pinMode(SIGNAL_OUT, OUTPUT);
   digitalWrite(SIGNAL_OUT, LOW);
-  Arms.attach(PIN_ARMS);
-  Arms.write(180);
-  delay(3000);
+  
+  arms.attach(PIN_ARMS);
+  arms.write(ARMS_START);
+  
+  delay(1000);
+  
 }
 
 
@@ -41,6 +52,7 @@ void loop()
   while  (digitalRead(SIGNAL_IN) != HIGH)
   {}                      //Do Nothing
   // play etch a sketch
+  
   play_etch_a_sketch();
   // signal completion of game
   finished();
@@ -74,41 +86,45 @@ void finished()
 /********************* PICK UP CARD  ************************************************************************/
 
 void pick_up_card()
-{
+{    
+    arms.attach(PIN_ARMS);
     // lower arms    
-    for (int i = 180; i >= 77; i--)
+    for (int i = ARMS_START; i >= ARMS_FINISH; i--)
     {
-      Arms.write(i);
+      arms.write(i);
       delay(30);
     }
     delay(1000);
     //raise arms
-    for (int i = 77; i <= 92; i++)
+    for (int i = ARMS_FINISH; i <= ARMS_FINISH + 15; i++)
     {
-      Arms.write(i);
+      arms.write(i);
       delay(50);
     }
     delay(1000);
-    for (int i = 92; i <= 180; i++)
+    for (int i = ARMS_FINISH + 15; i <= ARMS_START; i++)
     {
-      Arms.write(i);
+      arms.write(i);
       delay(15);
-    }
+    }    
     
+    arms.detach();
 }
 
 /********************* PLAY ETCH A SKETCH  ************************************************************************/
    
 void play_etch_a_sketch()
 {
+    arms.attach(PIN_ARMS);
+  
     leftKnob.attach(PIN_LEFT_KNOB);
     rightKnob.attach(PIN_RIGHT_KNOB);
     leftKnob.write(90);
     rightKnob.write(90);
 
-    for (int i = 180; i >= 77; i--)
+    for (int i = ARMS_START; i >= ARMS_FINISH; i--)
     {
-      Arms.write(i);
+      arms.write(i);
       delay(15);
     }
     delay(3000);
@@ -164,11 +180,13 @@ void play_etch_a_sketch()
     draw_action(LEFT, 600);
     draw_action(RIGHT, 850);
 
-    for (int i = 85; i <= 180; i+=2)
+    for (int i = ARMS_FINISH; i <= ARMS_START; i+=2)
     {
-      Arms.write(i);
+      arms.write(i);
       delay(15);
     }
+    
+    arms.detach();
     
 }
 

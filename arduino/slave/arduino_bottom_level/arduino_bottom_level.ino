@@ -130,55 +130,17 @@ void play_etch_a_sketch()
     delay(3000);
     //draw I
     draw_action(LEFT, 300);
-    draw_action(UP, 680);  
+    draw_action(UP, 850);  
     draw_action(RIGHT, 300);
     draw_action(DOWN, 700);
     draw_action(RIGHT, 400);
 
-    // draw E
-    draw_action(UP, 750);
-    draw_action(RIGHT, 400);
-    draw_action(DOWN, 250);
-    draw_action(LEFT, 400);
-    draw_action(DOWN, 100);
-    draw_action(RIGHT, 400);
-    draw_action(DOWN, 100);
-    draw_action(LEFT, 400);
-    draw_action(DOWN, 100);
-    draw_action(RIGHT, 400);
-    draw_action(DOWN, 100);
-    draw_action(LEFT, 600);
-    draw_action(RIGHT, 850);
-
-    // draw E
-    draw_action(UP, 750);
-    draw_action(RIGHT, 400);
-    draw_action(DOWN, 250);
-    draw_action(LEFT, 400);
-    draw_action(DOWN, 100);
-    draw_action(RIGHT, 400);
-    draw_action(DOWN, 100);
-    draw_action(LEFT, 400);
-    draw_action(DOWN, 100);
-    draw_action(RIGHT, 400);
-    draw_action(DOWN, 100);
-    draw_action(LEFT, 600);
-    draw_action(RIGHT, 850);
-
-    // draw E
-    draw_action(UP, 750);
-    draw_action(RIGHT, 400);
-    draw_action(DOWN, 250);
-    draw_action(LEFT, 400);
-    draw_action(DOWN, 100);
-    draw_action(RIGHT, 400);
-    draw_action(DOWN, 100);
-    draw_action(LEFT, 400);
-    draw_action(DOWN, 100);
-    draw_action(RIGHT, 400);
-    draw_action(DOWN, 100);
-    draw_action(LEFT, 600);
-    draw_action(RIGHT, 850);
+    draw_e();
+    
+    draw_e();
+    
+    draw_e();
+    
 
     for (int i = ARMS_FINISH; i <= ARMS_START; i+=2)
     {
@@ -222,4 +184,22 @@ void draw_action(int draw_dir, int seconds)
     delay(seconds);
     rightKnob.detach();
   }
+}
+
+void draw_e()
+{
+      // draw E
+    draw_action(UP, 800);
+    draw_action(RIGHT, 400);
+    draw_action(DOWN, 250);
+    draw_action(LEFT, 350);
+    draw_action(DOWN, 100);
+    draw_action(RIGHT, 400);
+    draw_action(DOWN, 100);
+    draw_action(LEFT, 350);
+    draw_action(DOWN, 100);
+    draw_action(RIGHT, 400);
+    draw_action(DOWN, 100);
+    draw_action(LEFT, 500);
+    draw_action(RIGHT, 1000);
 }

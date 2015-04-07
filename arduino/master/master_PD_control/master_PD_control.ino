@@ -11,10 +11,11 @@
 #define KP 1                      // Proportional Control Constant
 #define KD 100                       // Derivative Control Constant. ( Note: KP < KD)
 
-//define Max- and Basespeed
-#define MAXSPEED 100          
-#define BASESPEED 80 
-#define TURNSPEED 80
+//define Max- and BASE_SPEED
+
+#define MAX_SPEED 100          
+#define BASE_SPEED 80 
+#define TURN_SPEED 80
 
 //define line following set-up
 #define NUM_SENSORS 6             // Number of sensors used to follow a straight line
@@ -24,7 +25,13 @@
 #define EMITTER_PIN   30           // Emitter is controlled by digital pin 30
 
 //define photoresitor pin
-#define PHOTORESITORPIN 0
+#define PHOTORESISTOR_PIN 0
+
+// T-intersection pins
+#define T_INT_1 13
+#define T_INT_2 12
+#define T_INT_3 11
+#define T_INT_4 10
 
 //define communication pins
 #define UNO_PIN_BOTTOM_OUT 47
@@ -35,21 +42,21 @@
 
 
 //define Front Gripper Pins
-#define FGRIPPER1 42
-#define FGRIPPER2 41
+#define F_GRIPPER_1 42
+#define F_GRIPPER_2 41
 
 //define constants for motor shield pin assignments
 #define STBY 24
-#define RIGHTMOTORFORWARD 23        
-#define RIGHTMOTORBACKWARD 22       
-#define RIGHTMOTORPWM 2             
-#define LEFTMOTORFORWARD 25         
-#define LEFTMOTORBACKWARD 26        
-#define LEFTMOTORPWM 3              
+#define RIGHT_MOTOR_FORWARD 23        
+#define RIGHT_MOTOR_BACKWARD 22       
+#define RIGHT_MOTOR_PWM 2             
+#define LEFT_MOTOR_FORWARD 25         
+#define LEFT_MOTOR_BACKWARD 26        
+#define LEFT_MOTOR_PWM 3              
 
 //define constants for motor control
-#define RIGHTMOTOR 1
-#define LEFTMOTOR 0
+#define RIGHT_MOTOR 1
+#define LEFT_MOTOR 0
 #define FWD 1
 #define BWD 0
 #define RIGHT 1
@@ -61,9 +68,9 @@
 
 // define threshold Values
 #define THRESHOLD_LOW 500
-#define THRESHOLD_HIGH 900
+#define THRESHOLD_HIGH 1100
 
-// sensor set-up according to QTR library
+// sensor set-up accordingto QTR library
 QTRSensorsRC qtrrc((unsigned char[]) {32, 33, 34, 35, 36, 37 } ,NUM_SENSORS, TIMEOUT, EMITTER_PIN);  // The 4 sensors used for following a straight line are digital pins 33, 34, 35, and 36
 QTRSensorsRC poll((unsigned char[]) {38, 31} ,NUM_POLLING_SENSORS, TIMEOUT, EMITTER_PIN);    // The 2 polling sensors for 90 degree turns are digital pins 38 and 31
 QTRSensorsRC turnIndicator((unsigned char[]) {39, 40} ,NUM_TURNING_SENSORS, TIMEOUT);        // The 2 polling sensors at the front are digital pins 39 and 40
@@ -75,16 +82,21 @@ unsigned int frontPollingValues[NUM_TURNING_SENSORS];                           
 LiquidCrystal lcd(49, 51, 53, 52, 50, 48);
 
 Servo backGripper;
+int tInt [4];
 /********************  SETUP  ***************************************************************************************************************/
 
 void setup()
 {
+  Serial.begin(9600);
+  
   setupMotorshield();  // Jump to setupMotorshield to define pins as output
   backGripper.attach(4);
   backGripper.write(0);
   //start_course();
   auto_calibrate();   // function that calibrates the line following sensor
   front_gripper(OPEN);
+  
+  get_t_intersections();
 
   lcd.begin(16, 2);
   lcd.clear();
@@ -102,6 +114,7 @@ boolean gameTurn = 0;
 boolean tIntersection = 0;
 int turnCount = 0;
 int gameCount = 0;
+int tIntCount = 0;
 
 
 
@@ -176,8 +189,8 @@ void loop()
       lcd.clear();
       lcd.setCursor(0,0);
       lcd.print("Skip Game Turn");
-      drive_motor(RIGHT, FWD, BASESPEED);
-      drive_motor(LEFT, FWD, BASESPEED);
+      drive_motor(RIGHT, FWD, BASE_SPEED);
+      drive_motor(LEFT, FWD, BASE_SPEED);
       gameTurn = 0;
       tIntersection = 0;
       turnCount = 0;
@@ -249,7 +262,8 @@ void loop()
           tIntersection = 1;
           gameTurn = 1;
           turnCount = 1;
-      	  turn(RIGHT);
+      	  turn(tInt[tIntCount]);
+          tIntCount++;
         }
     }
     lcd.setCursor(0,1);
@@ -259,7 +273,6 @@ void loop()
     lcd.setCursor(6,1);
     lcd.print(FS);
     stop_motors();
-    //delay(5000);
   }
   
 
@@ -272,19 +285,19 @@ void loop()
     int motorSpeed = KP * error + KD * (error - lastError);                // Adjust motorspeed according to constants KP and KD
     lastError = error;                                                     // Update last error to compare to next error
   
-    rightMotorSpeed = BASESPEED + motorSpeed;                              // Update right and left motor speeds by the calculated motor speed
-    leftMotorSpeed = BASESPEED - motorSpeed;
+    rightMotorSpeed = BASE_SPEED + motorSpeed;                              // Update right and left motor speeds by the calculated motor speed
+    leftMotorSpeed = BASE_SPEED - motorSpeed;
     
-    if (rightMotorSpeed > MAXSPEED ) rightMotorSpeed = MAXSPEED ;          // Prevent the motor from going beyond max speed
-    if (leftMotorSpeed > MAXSPEED ) leftMotorSpeed = MAXSPEED;             // Prevent the motor from going beyond max speed
+    if (rightMotorSpeed > MAX_SPEED ) rightMotorSpeed = MAX_SPEED ;          // Prevent the motor from going beyond max speed
+    if (leftMotorSpeed > MAX_SPEED ) leftMotorSpeed = MAX_SPEED;             // Prevent the motor from going beyond max speed
     if (rightMotorSpeed < 0) rightMotorSpeed = 0;                          // Keep the motor speed positive
     if (leftMotorSpeed < 0) leftMotorSpeed = 0;                            // Keep the motor speed positive                           
   }
   
   {
     // Use drive function with corrected motor speeds
-    drive_motor(RIGHTMOTOR, FWD, rightMotorSpeed); 
-    drive_motor(LEFTMOTOR, FWD, leftMotorSpeed);    
+    drive_motor(RIGHT_MOTOR, FWD, rightMotorSpeed); 
+    drive_motor(LEFT_MOTOR, FWD, leftMotorSpeed);    
   }
 }
 
@@ -298,22 +311,22 @@ void setupMotorshield()
   
   // drive motors
   pinMode(STBY, OUTPUT);
-  pinMode(RIGHTMOTORFORWARD, OUTPUT);
-  pinMode(RIGHTMOTORBACKWARD, OUTPUT);
-  pinMode(RIGHTMOTORPWM, OUTPUT);
-  pinMode(LEFTMOTORFORWARD, OUTPUT);
-  pinMode(LEFTMOTORBACKWARD, OUTPUT);
-  pinMode(LEFTMOTORPWM, OUTPUT);
+  pinMode(RIGHT_MOTOR_FORWARD, OUTPUT);
+  pinMode(RIGHT_MOTOR_BACKWARD, OUTPUT);
+  pinMode(RIGHT_MOTOR_PWM, OUTPUT);
+  pinMode(LEFT_MOTOR_FORWARD, OUTPUT);
+  pinMode(LEFT_MOTOR_BACKWARD, OUTPUT);
+  pinMode(LEFT_MOTOR_PWM, OUTPUT);
   
   digitalWrite(STBY, HIGH);
-  digitalWrite(RIGHTMOTORFORWARD, HIGH);
-  digitalWrite(RIGHTMOTORBACKWARD, LOW);
-  digitalWrite(LEFTMOTORFORWARD, HIGH);
-  digitalWrite(LEFTMOTORBACKWARD, LOW);
+  digitalWrite(RIGHT_MOTOR_FORWARD, HIGH);
+  digitalWrite(RIGHT_MOTOR_BACKWARD, LOW);
+  digitalWrite(LEFT_MOTOR_FORWARD, HIGH);
+  digitalWrite(LEFT_MOTOR_BACKWARD, LOW);
   
   // front gripper 
-  pinMode(FGRIPPER1, OUTPUT);
-  pinMode(FGRIPPER2, OUTPUT);
+  pinMode(F_GRIPPER_1, OUTPUT);
+  pinMode(F_GRIPPER_2, OUTPUT);
   
   // communication pins
   
@@ -324,6 +337,39 @@ void setupMotorshield()
   pinMode(UNO_PIN_TOP_OUT, OUTPUT);
   pinMode(UNO_PIN_TOP_IN, INPUT);
   digitalWrite(UNO_PIN_TOP_OUT, LOW);
+}
+
+/************************** GET THE T-INTERSECTIONS ************************************************/
+
+void get_t_intersections()
+{
+  pinMode(T_INT_1, INPUT);
+  pinMode(T_INT_2, INPUT);
+  pinMode(T_INT_3, INPUT);
+  pinMode(T_INT_4, INPUT);
+  
+ 
+    tInt[0] = digitalRead(T_INT_1);
+    Serial.print(tInt[0]);
+    tInt[1] = digitalRead(T_INT_2);
+    Serial.print(tInt[1]);
+    tInt[2] = digitalRead(T_INT_3);
+    Serial.print(tInt[2]);
+    tInt[3] = digitalRead(T_INT_4);
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print(tInt[0]);
+    lcd.setCursor(2,0);
+    lcd.print(tInt[1]);
+    lcd.setCursor(4,0);
+    lcd.print(tInt[2]);
+    lcd.setCursor(6,0);
+    lcd.print(tInt[3]);
+    Serial.print(tInt[3]);
+    Serial.print('\n');
+    delay(500);
+  
+  
 }
 
 /*************************** AUTO-CALIBRATE *****************************************************************************/
@@ -364,15 +410,15 @@ void auto_calibrate()
 
 void start_course() 
 {
-  int currentRead =analogRead(PHOTORESITORPIN);
+  int currentRead =analogRead(PHOTORESISTOR_PIN);
   while (currentRead < 500) 
   {
-    currentRead = analogRead(PHOTORESITORPIN);
+    currentRead = analogRead(PHOTORESISTOR_PIN);
     delay(20);
   }
   poll.read(pollingValues);
-  drive_motor(RIGHT, FWD, BASESPEED);
-  drive_motor(LEFT, FWD, BASESPEED);
+  drive_motor(RIGHT, FWD, BASE_SPEED);
+  drive_motor(LEFT, FWD, BASE_SPEED);
   delay(900);
   stop_motors();
 }
@@ -381,36 +427,36 @@ void start_course()
 // this function drives the motors: specify motor, direction, speed
 void drive_motor(boolean motor, boolean dir, int spd)
 {
-  if (motor == RIGHTMOTOR)
+  if (motor == RIGHT_MOTOR)
   {
     if (dir == FWD) //Right motor forward
     {
-      digitalWrite(RIGHTMOTORFORWARD, HIGH);
-      digitalWrite(RIGHTMOTORBACKWARD, LOW);
-      analogWrite(RIGHTMOTORPWM, spd);                            // Send the new calculated motor speeds from the motor controller to the motors
+      digitalWrite(RIGHT_MOTOR_FORWARD, HIGH);
+      digitalWrite(RIGHT_MOTOR_BACKWARD, LOW);
+      analogWrite(RIGHT_MOTOR_PWM, spd);                            // Send the new calculated motor speeds from the motor controller to the motors
       
     }
     else if(dir == BWD)//Right motor backwards
     {
-      digitalWrite(RIGHTMOTORFORWARD, LOW);
-      digitalWrite(RIGHTMOTORBACKWARD, HIGH);
-      analogWrite(RIGHTMOTORPWM, spd);                            // Send the new calculated motor speeds from the motor controller to the motors
+      digitalWrite(RIGHT_MOTOR_FORWARD, LOW);
+      digitalWrite(RIGHT_MOTOR_BACKWARD, HIGH);
+      analogWrite(RIGHT_MOTOR_PWM, spd);                            // Send the new calculated motor speeds from the motor controller to the motors
     }
   }
-  else if(motor == LEFTMOTOR)
+  else if(motor == LEFT_MOTOR)
   {
     if (dir == FWD)//Left motor forwards
     {
-      digitalWrite(LEFTMOTORFORWARD, HIGH);
-      digitalWrite(LEFTMOTORBACKWARD, LOW);
-      analogWrite(LEFTMOTORPWM, spd);                            // Send the new calculated motor speeds from the motor controller to the motors
+      digitalWrite(LEFT_MOTOR_FORWARD, HIGH);
+      digitalWrite(LEFT_MOTOR_BACKWARD, LOW);
+      analogWrite(LEFT_MOTOR_PWM, spd);                            // Send the new calculated motor speeds from the motor controller to the motors
       
     }
     else if(dir == BWD)//Right motor backwards
     {
-      digitalWrite(LEFTMOTORFORWARD, LOW);
-      digitalWrite(LEFTMOTORBACKWARD, HIGH);
-      analogWrite(LEFTMOTORPWM, spd);                            // Send the new calculated motor speeds from the motor controller to the motors
+      digitalWrite(LEFT_MOTOR_FORWARD, LOW);
+      digitalWrite(LEFT_MOTOR_BACKWARD, HIGH);
+      analogWrite(LEFT_MOTOR_PWM, spd);                            // Send the new calculated motor speeds from the motor controller to the motors
     }
   }  
 }
@@ -419,16 +465,16 @@ void drive_motor(boolean motor, boolean dir, int spd)
 // stop both motors
 void stop_motors()
 {
-  drive_motor(RIGHTMOTOR, FWD, 0);
-  drive_motor(LEFTMOTOR, FWD, 0);
+  drive_motor(RIGHT_MOTOR, FWD, 0);
+  drive_motor(LEFT_MOTOR, FWD, 0);
 }
 
 /************************** RESET MOTOR SPEEDS ********************************************************************/
 // reset motor speeds
 void reset_motor_speeds()
 {
-  rightMotorSpeed = BASESPEED;
-  leftMotorSpeed = BASESPEED;
+  rightMotorSpeed = BASE_SPEED;
+  leftMotorSpeed = BASE_SPEED;
 }
 
 /************************** TURNS ********************************************************************/
@@ -439,8 +485,8 @@ void turn(boolean dir)
   lastTurn = dir;
   if (dir == RIGHT)
   {
-    drive_motor(RIGHTMOTOR, BWD, TURNSPEED);
-    drive_motor(LEFTMOTOR, FWD, TURNSPEED);
+    drive_motor(RIGHT_MOTOR, BWD, TURN_SPEED);
+    drive_motor(LEFT_MOTOR, FWD, TURN_SPEED);
     
     turnIndicator.read(frontPollingValues);
     while (frontPollingValues[1] < THRESHOLD_HIGH || frontPollingValues[0] < THRESHOLD_HIGH) 
@@ -462,8 +508,8 @@ void turn(boolean dir)
   
   else if (dir == LEFT)
   {
-    drive_motor(RIGHTMOTOR, FWD, TURNSPEED);
-    drive_motor(LEFTMOTOR, BWD, TURNSPEED);
+    drive_motor(RIGHT_MOTOR, FWD, TURN_SPEED);
+    drive_motor(LEFT_MOTOR, BWD, TURN_SPEED);
     
     turnIndicator.read(frontPollingValues);
     while (frontPollingValues[0] < THRESHOLD_HIGH || frontPollingValues[1] < THRESHOLD_HIGH) 
@@ -483,8 +529,8 @@ void turn(boolean dir)
     }
   }
  
-  drive_motor(RIGHTMOTOR, FWD, BASESPEED);
-  drive_motor(LEFTMOTOR, FWD, BASESPEED);
+  drive_motor(RIGHT_MOTOR, FWD, BASE_SPEED);
+  drive_motor(LEFT_MOTOR, FWD, BASE_SPEED);
   delay(200);
   reset_motor_speeds();
 }
@@ -497,8 +543,8 @@ void follow_bwd(boolean dir)
   {
     poll.read(pollingValues);
     
-    drive_motor(RIGHTMOTOR, BWD, BASESPEED);
-    drive_motor(LEFTMOTOR, BWD, BASESPEED);
+    drive_motor(RIGHT_MOTOR, BWD, BASE_SPEED);
+    drive_motor(LEFT_MOTOR, BWD, BASE_SPEED);
   }
   reset_motor_speeds();
 
@@ -528,16 +574,16 @@ void follow_bwd(boolean dir)
     int motorSpeed = KP * error + KD * (error - lastError);                // Adjust motorspeed according to constants KP and KD
     lastError = error;                                                     // Update last error to compare to next error
 
-    rightMotorSpeed = BASESPEED + motorSpeed;                              // Update right and left motor speeds by the calculated motor speed
-    leftMotorSpeed = BASESPEED - motorSpeed;
+    rightMotorSpeed = BASE_SPEED + motorSpeed;                              // Update right and left motor speeds by the calculated motor speed
+    leftMotorSpeed = BASE_SPEED - motorSpeed;
 
-    if (rightMotorSpeed > MAXSPEED ) rightMotorSpeed = MAXSPEED ;          // Prevent the motor from going beyond max speed
-    if (leftMotorSpeed > MAXSPEED ) leftMotorSpeed = MAXSPEED;             // Prevent the motor from going beyond max speed
+    if (rightMotorSpeed > MAX_SPEED ) rightMotorSpeed = MAX_SPEED ;          // Prevent the motor from going beyond max speed
+    if (leftMotorSpeed > MAX_SPEED ) leftMotorSpeed = MAX_SPEED;             // Prevent the motor from going beyond max speed
     if (rightMotorSpeed < 0) rightMotorSpeed = 0;                          // Keep the motor speed positive
     if (leftMotorSpeed < 0) leftMotorSpeed = 0;                            // Keep the motor speed positive
   
-    drive_motor(RIGHTMOTOR, BWD, rightMotorSpeed); 
-    drive_motor(LEFTMOTOR, BWD, leftMotorSpeed);    
+    drive_motor(RIGHT_MOTOR, BWD, rightMotorSpeed); 
+    drive_motor(LEFT_MOTOR, BWD, leftMotorSpeed);    
   }
 
 }
@@ -550,20 +596,20 @@ void front_gripper(int action)
 {
   if(action == STOP)
   {
-    digitalWrite(FGRIPPER1, LOW);
-    digitalWrite(FGRIPPER2, LOW);
+    digitalWrite(F_GRIPPER_1, LOW);
+    digitalWrite(F_GRIPPER_2, LOW);
   }  
   
   else if(action == OPEN)
   {
-    digitalWrite(FGRIPPER1, LOW);
-    digitalWrite(FGRIPPER2, HIGH);
+    digitalWrite(F_GRIPPER_1, LOW);
+    digitalWrite(F_GRIPPER_2, HIGH);
   }
   
   else if(action == CLOSE)
   {
-    digitalWrite(FGRIPPER1, HIGH);
-    digitalWrite(FGRIPPER2, LOW);
+    digitalWrite(F_GRIPPER_1, HIGH);
+    digitalWrite(F_GRIPPER_2, LOW);
   }
   
   
@@ -582,7 +628,7 @@ void grip_game(int millisec)
  
   drive_motor(RIGHT, FWD, 20); 
   drive_motor(LEFT, FWD, 20); 
-  delay(500);
+  delay(1000);
   
   stop_motors();
   
@@ -595,10 +641,9 @@ void ungrip_game()
   front_gripper(OPEN);
   delay(200);
   
-  drive_motor(RIGHT, BWD, 30); 
-  drive_motor(LEFT, BWD, 30); 
-  
-  delay(500);
+  drive_motor(RIGHT, BWD, 20); 
+  drive_motor(LEFT, BWD, 20); 
+  delay(1000);
 }
 
 

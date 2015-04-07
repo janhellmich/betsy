@@ -115,7 +115,7 @@ void play_rubiks_cube()
   }
   
   // raise arm
-  for (int i = RK_ARM_FINISH; i < RK_ARM_FINISH + 15; i++)
+  for (int i = RK_ARM_FINISH; i < RK_ARM_FINISH + 20; i++)
   {
     rkArm.write(i);
     delay(15);
@@ -129,7 +129,7 @@ void play_rubiks_cube()
   }
   
   // lower arm
-  for (int i = RK_ARM_FINISH + 15; i > RK_ARM_FINISH; i--)
+  for (int i = RK_ARM_FINISH + 20; i > RK_ARM_FINISH; i--)
   {
     rkArm.write(i);
     delay(15);
@@ -143,7 +143,7 @@ void play_rubiks_cube()
   }
   
   // raise arm
-  for (int i = RK_ARM_FINISH; i < RK_ARM_FINISH + 15; i++)
+  for (int i = RK_ARM_FINISH; i < RK_ARM_FINISH + 20; i++)
   {
     rkArm.write(i);
     delay(15);
@@ -159,7 +159,7 @@ void play_rubiks_cube()
   rkTurn.detach();
   
   // raise arm
-  for (int i = RK_ARM_FINISH +15; i < RK_ARM_START; i++)
+  for (int i = RK_ARM_FINISH + 20; i < RK_ARM_START; i++)
   {
     rkArm.write(i);
     delay(15);

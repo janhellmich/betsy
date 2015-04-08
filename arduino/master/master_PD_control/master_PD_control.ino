@@ -654,8 +654,7 @@ void play_game(int gameCount)
   switch(gameCount){
     case 1:
     {
-      play_rubiks_cube();
-      follow_bwd(lastTurn);
+      play_simon();
       break;
     }
     case 2:
@@ -666,7 +665,8 @@ void play_game(int gameCount)
     }
     case 3:
     {
-      // play rubics cube
+      
+      play_rubiks_cube();
       follow_bwd(lastTurn);
       break;
     }
@@ -680,12 +680,13 @@ void play_game(int gameCount)
   }
 }
 
-
 /********************* PLAY SIMON ************************************************************************/  
 
 void play_simon()
 { 
-  
+  drive_motor(RIGHT, BWD, 30);
+  drive_motor(LEFT, BWD, 30);
+  delay(1000);
   turnIndicator.read(frontPollingValues);
   drive_motor(RIGHT, FWD, 50);
   drive_motor(LEFT, BWD, 50);
@@ -704,18 +705,37 @@ void play_simon()
   drive_motor(LEFT, BWD, 30);
   
   
-  delay(1000);
+  delay(1700);
   stop_motors();
   
   
-  for (int i = 0; i < 180; i++) 
+  for (int i = 0; i < 80; i++) 
+  {
+    backGripper.write(i);
+    delay(10);
+  }
+  
+  
+  for (int i = 80; i > 50; i--) 
+  {
+    backGripper.write(i);
+    delay(5);
+  }
+  
+  drive_motor(RIGHT, BWD, 25);
+  drive_motor(LEFT, BWD, 25);
+  
+  delay(550);
+  stop_motors();
+  
+    for (int i = 50; i < 80; i++) 
   {
     backGripper.write(i);
     delay(10);
   }
   delay(5000);
   
-  for (int i = 180; i > 0; i--) 
+  for (int i = 80; i > 0; i--) 
   {
     backGripper.write(i);
     delay(5);

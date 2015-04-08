@@ -1,6 +1,6 @@
 // This program will read in the photoresistor to start the game
 
-#define RESISTOR_PIN 7
+#define RESISTOR_PIN 0
 
 void setup() 
 {

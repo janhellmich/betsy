@@ -23,22 +23,23 @@
 #define NUM_TURNING_SENSORS 2     // Number of sensors used to stop turns
 #define TIMEOUT       2500        // Waits for 2500 us for sensor outputs to go low. If they are not yet low, value is set at 2500
 #define EMITTER_PIN   30           // Emitter is controlled by digital pin 30
+#define START_LED_PIN 45
 
 //define photoresitor pin
 #define PHOTORESISTOR_PIN 0
 
 // T-intersection pins
-#define T_INT_1 13
-#define T_INT_2 12
-#define T_INT_3 11
-#define T_INT_4 10
+#define T_INT_1 10
+#define T_INT_2 11
+#define T_INT_3 12
+#define T_INT_4 13
 
 //define communication pins
 #define UNO_PIN_BOTTOM_OUT 47
-#define UNO_PIN_BOTTOM_IN 44
+#define UNO_PIN_BOTTOM_IN 46
 
-#define UNO_PIN_TOP_OUT 46
-#define UNO_PIN_TOP_IN 43
+#define UNO_PIN_TOP_OUT 9
+#define UNO_PIN_TOP_IN 8
 
 
 //define Front Gripper Pins
@@ -89,17 +90,26 @@ void setup()
 {
   Serial.begin(9600);
   
-  setupMotorshield();  // Jump to setupMotorshield to define pins as output
+  setupMotorshield();
+  
+  
+  lcd.begin(16, 2);
+  lcd.clear();  
+  
   backGripper.attach(4);
   backGripper.write(0);
-  //start_course();
+  
+  if (digitalRead(T_INT_4))
+  {
+    start_course();
+  }
+  
   auto_calibrate();   // function that calibrates the line following sensor
+ 
   front_gripper(OPEN);
   
   get_t_intersections();
 
-  lcd.begin(16, 2);
-  lcd.clear();
   
 }
 // Initialize error constant and motor speeds
@@ -273,6 +283,7 @@ void loop()
     lcd.setCursor(6,1);
     lcd.print(FS);
     stop_motors();
+    delay(10000);
   }
   
 
@@ -328,6 +339,16 @@ void setupMotorshield()
   pinMode(F_GRIPPER_1, OUTPUT);
   pinMode(F_GRIPPER_2, OUTPUT);
   
+  //Start LED
+  pinMode(START_LED_PIN, OUTPUT);
+  
+  //T-intersections
+  pinMode(T_INT_1, INPUT);
+  pinMode(T_INT_2, INPUT);
+  pinMode(T_INT_3, INPUT);
+  pinMode(T_INT_4, INPUT);
+  
+  
   // communication pins
   
   pinMode(UNO_PIN_BOTTOM_OUT, OUTPUT);
@@ -343,10 +364,7 @@ void setupMotorshield()
 
 void get_t_intersections()
 {
-  pinMode(T_INT_1, INPUT);
-  pinMode(T_INT_2, INPUT);
-  pinMode(T_INT_3, INPUT);
-  pinMode(T_INT_4, INPUT);
+
   
  
     tInt[0] = digitalRead(T_INT_1);
@@ -411,12 +429,21 @@ void auto_calibrate()
 void start_course() 
 {
   int currentRead =analogRead(PHOTORESISTOR_PIN);
-  while (currentRead < 500) 
+  while (currentRead < 20) 
+  {
+    currentRead = analogRead(PHOTORESISTOR_PIN);
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print(currentRead);
+    delay(20);
+  }
+  digitalWrite(START_LED_PIN, HIGH);
+  while (currentRead > 18) 
   {
     currentRead = analogRead(PHOTORESISTOR_PIN);
     delay(20);
   }
-  poll.read(pollingValues);
+
   drive_motor(RIGHT, FWD, BASE_SPEED);
   drive_motor(LEFT, FWD, BASE_SPEED);
   delay(900);
@@ -748,7 +775,7 @@ void play_simon()
   
   poll.read(pollingValues);
   
-  while (pollingValues[0] <= THRESHOLD_HIGH || pollingValues[1] <= THRESHOLD_HIGH)
+  while (pollingValues[0] <= THRESHOLD_HIGH && pollingValues[1] <= THRESHOLD_HIGH)
   {
     poll.read(pollingValues);
     delay(20);

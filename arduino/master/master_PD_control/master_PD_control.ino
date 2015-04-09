@@ -113,6 +113,15 @@ void setup()
   backGripper.attach(4);
   backGripper.write(0);
   
+  
+  //DEBUG for SIMON
+//  for (int i = 0; i < 80; i++)
+//  { 
+//    backGripper.write(i);
+//    delay(15);
+//  }
+//  while (true) {}
+  
   // DEBUG
   if (digitalRead(T_INT_4))
   {

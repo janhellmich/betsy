@@ -33,17 +33,17 @@
 #define SERVO_START_YELLOW_BLUE 103
 #define SERVO_START_RED_GREEN 88
 #define SERVO_START_MIDDLE 60
-#define TURN_ANGLE 53
+#define TURN_ANGLE 45
 
 // define SS arm angles
 #define SS_ARM_START 165
 #define SS_ARM_FINISH 60
 
 // define photoresistor threshold values
-#define THRESHOLD_RED 350
-#define THRESHOLD_GREEN 255
-#define THRESHOLD_YELLOW 65
-#define THRESHOLD_BLUE 190
+#define THRESHOLD_RED 420
+#define THRESHOLD_GREEN 290
+#define THRESHOLD_YELLOW 110
+#define THRESHOLD_BLUE 180
 
 // define color constants
 #define RED 2
@@ -224,32 +224,32 @@ void play_simon_says()
 void compare_brightness()                                                    //Determine which color is the 1st illuminated
 {
   
-  if (brightnessRed > redSetpoint && brightnessRed - redSetpoint > maximum)                                                            //If Red sensor shows brightness > Red Setpoint
+  if ((brightnessRed - redSetpoint) > maximum)                                                            //If Red sensor shows brightness > Red Setpoint
   {
-    Serial.println("detected Red: " + String(brightnessRed - redSetpoint));
+    Serial.println("detected Red: " + String(brightnessRed - redSetpoint) + "   " + String(maximum));
     lastPress = RED;
     maximum = brightnessRed - redSetpoint;
   }
   
-  else if (brightnessGreen > greenSetpoint && brightnessGreen - greenSetpoint > maximum)                                                        //If Green sensor shows brightness > Green Setpoint
+  else if ((brightnessGreen - greenSetpoint) > maximum)                                                        //If Green sensor shows brightness > Green Setpoint
   {
-    Serial.println("detected Green: " + String(brightnessGreen - greenSetpoint));
+    Serial.println("detected Green: " + String(brightnessGreen - greenSetpoint) + "   " + String(maximum));
     lastPress = GREEN;     
     maximum = brightnessGreen - greenSetpoint;    
   }
  
-  else if (brightnessYellow >yellowSetpoint && brightnessYellow - yellowSetpoint > maximum)                                                       //If Yellow sensor shows brightness > Yellow Setpoint
+  else if ((brightnessYellow - yellowSetpoint) > maximum)                                                       //If Yellow sensor shows brightness > Yellow Setpoint
   {
-    Serial.println("detected Yellow: " + String(brightnessYellow - yellowSetpoint));
+    Serial.println("detected Yellow: " + String(brightnessYellow - yellowSetpoint) + "   " + String(maximum));
     lastPress = YELLOW;
     maximum = brightnessYellow - yellowSetpoint;
   }
 
-  else if (brightnessBlue > blueSetpoint && brightnessBlue - blueSetpoint > maximum)                                                          //If Blue sensor shows brightness > Blue Setpoint
+  else if ((brightnessBlue - blueSetpoint) > maximum)                                                          //If Blue sensor shows brightness > Blue Setpoint
   {
-    Serial.println("detected Blue: " + String(brightnessBlue - blueSetpoint));
+    Serial.println("detected Blue: " + String(brightnessBlue - blueSetpoint) + "   " + String(maximum));
     lastPress = BLUE;
-    
+    maximum = brightnessBlue - blueSetpoint;
   }
   
 }

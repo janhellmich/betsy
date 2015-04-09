@@ -71,6 +71,8 @@
 #define THRESHOLD_LOW 500
 #define THRESHOLD_HIGH 1100
 
+
+
 // sensor set-up accordingto QTR library
 QTRSensorsRC qtrrc((unsigned char[]) {32, 33, 34, 35, 36, 37 } ,NUM_SENSORS, TIMEOUT, EMITTER_PIN);  // The 4 sensors used for following a straight line are digital pins 33, 34, 35, and 36
 QTRSensorsRC poll((unsigned char[]) {38, 31} ,NUM_POLLING_SENSORS, TIMEOUT, EMITTER_PIN);    // The 2 polling sensors for 90 degree turns are digital pins 38 and 31
@@ -79,43 +81,58 @@ unsigned int sensorValues[NUM_SENSORS];                                         
 unsigned int pollingValues[NUM_POLLING_SENSORS];                                             // An array containing the sensor values for the 2 polling sensors
 unsigned int frontPollingValues[NUM_TURNING_SENSORS];                                        // An array containing the sensor values for the 2 front polling sensors
 
+
+
+
 // debug lcd
 LiquidCrystal lcd(49, 51, 53, 52, 50, 48);
 
+
 Servo backGripper;
+
+
 int tInt [4];
+
+
+
 /********************  SETUP  ***************************************************************************************************************/
 
+
 void setup()
+
 {
+  
+  // DEBUG
   Serial.begin(9600);
+  lcd.begin(16, 2);
+  lcd.clear();
+  
   
   setupMotorshield();
-  
-  
-  lcd.begin(16, 2);
-  lcd.clear();  
   
   backGripper.attach(4);
   backGripper.write(0);
   
+  // DEBUG
   if (digitalRead(T_INT_4))
   {
     start_course();
   }
   
-  auto_calibrate();   // function that calibrates the line following sensor
+  auto_calibrate();   
  
   front_gripper(OPEN);
   
   get_t_intersections();
-
-  
+ 
 }
+
+
 // Initialize error constant and motor speeds
 int lastError = 0;      
 int rightMotorSpeed = 0;
 int leftMotorSpeed = 0;
+
 
 //Declare global last turn variable
 boolean lastTurn;
@@ -132,14 +149,17 @@ int tIntCount = 0;
 /******************   MAIN LOOP   ***************************************************************************************************************/
 
 void loop()
+
 { 
-  //check for upcoming turns
+  
+  // read polling sensors
   poll.read(pollingValues);
   
-  
-  //attemted update of decisions
+  // check if decisions has to be made
   if (pollingValues[0] <= THRESHOLD_LOW || pollingValues[1] <= THRESHOLD_LOW)
+  
   {
+    
     // read front sensor
     turnIndicator.read(frontPollingValues);
     
@@ -148,6 +168,8 @@ void loop()
     int RS = pollingValues[1];
     int LS = pollingValues[0];
     
+    
+    // DEBUG
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print("turnCount:");
@@ -159,6 +181,8 @@ void loop()
     lcd.print(RS);
     lcd.setCursor(6,1);
     lcd.print(FS);
+    
+    
     stop_motors();
     
     // Check for Right Turn
@@ -172,33 +196,53 @@ void loop()
       {
         turnCount--;
       }
+      
+      // DEBUG
       lcd.clear();
       lcd.setCursor(0,0);
       lcd.print("Right Turn");
+      
+      
       turn(RIGHT);
+      
     }
+    
     // Check left turn
     else if (RS >= THRESHOLD_HIGH && LS <= THRESHOLD_LOW && FS >= THRESHOLD_HIGH)
+    
     {
+      
       if (gameTurn == 1)
       {
         turnCount ++;
       }
+      
       else if (turnCount > 0)
       {
         turnCount--;
       }
+      
+      // DEBUG
       lcd.clear();
       lcd.setCursor(0,0);
       lcd.print("Left Turn");
+      
+      
       turn(LEFT);
+      
     }
+    
     // Check if gameturn that should be skipped
     else if ((RS >= THRESHOLD_HIGH || LS >= THRESHOLD_HIGH) && tIntersection == 1)
+    
     {
+      
+      // DEBUG
       lcd.clear();
       lcd.setCursor(0,0);
       lcd.print("Skip Game Turn");
+      
+      
       drive_motor(RIGHT, FWD, BASE_SPEED);
       drive_motor(LEFT, FWD, BASE_SPEED);
       gameTurn = 0;
@@ -207,75 +251,112 @@ void loop()
       delay(200);
       
     }
+    
      // Check right game turn
     else if (RS <= THRESHOLD_LOW && LS >= THRESHOLD_HIGH && FS <= THRESHOLD_HIGH && gameTurn == 0)
+    
     {
+       // DEBUG
        lcd.clear();
        lcd.setCursor(0,0);
        lcd.print("Right Game Turn");
+       
+       
        stop_motors();
        //delay(1000);
        lastGameTurn = RIGHT;
        gameTurn = 1;
        turnCount = 1;
        turn(RIGHT);
+       
     }  
+    
      // Check left game turn
     else if (RS >= THRESHOLD_HIGH && LS <= THRESHOLD_LOW && FS <= THRESHOLD_HIGH && gameTurn == 0)
+    
     {
+      
+      //DEBUG
       lcd.clear();
       lcd.setCursor(0,0);
       lcd.print("Left Game Turn");
+      
+      
        stop_motors();
-       //delay(1000);
        lastGameTurn = LEFT;
        gameTurn = 1;
        turnCount = 1;
        turn(LEFT);
+       
     } 
+    
      // Check for Game
     else if (FS <= THRESHOLD_LOW)
+    
     {
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("Play Game");
+      
+        // DEBUG
+        lcd.clear();
+        lcd.setCursor(0,0);
+        lcd.print("Play Game");
+        
         stop_motors();
         gameCount++;
         play_game(gameCount);	
         gameTurn = 0;
+        
     } 
+    
     // T-intersection
     else 
+    
     {
       
         if (turnCount == 1) 
         {
+          
+          // DEBUG
           lcd.clear();
           lcd.setCursor(0,0);
           lcd.print("T-int after game");
+          
           turn(lastGameTurn);
           turnCount = 0;
+          
         }
+        
         else if (gameCount == 4)
         {
+          
+          // DEBUG
           lcd.clear();
           lcd.setCursor(0,0);
           lcd.print("finish line");
+          
           stop_motors();
           delay(10000);
+          
         }
+        
         else 
         {
+          
+          //DEBUG
           lcd.clear();
           lcd.setCursor(0,0);
           lcd.print("T-intersection");
+          
           tIntersection = 1;
           gameTurn = 1;
           turnCount = 1;
       	  turn(tInt[tIntCount]);
           tIntCount++;
+          
         }
+        
     }
+    
+    // DEBUG
     lcd.setCursor(0,1);
     lcd.print(LS);
     lcd.setCursor(12,1);
@@ -283,7 +364,8 @@ void loop()
     lcd.setCursor(6,1);
     lcd.print(FS);
     stop_motors();
-    delay(10000);
+    //delay(10000);
+    
   }
   
 
@@ -310,6 +392,7 @@ void loop()
     drive_motor(RIGHT_MOTOR, FWD, rightMotorSpeed); 
     drive_motor(LEFT_MOTOR, FWD, leftMotorSpeed);    
   }
+  
 }
 
 
@@ -318,6 +401,7 @@ void loop()
 /************************** SETUP PINS ************************************************/
 // This function sets up the pins
 void setupMotorshield()
+
 {
   
   // drive motors
@@ -335,12 +419,15 @@ void setupMotorshield()
   digitalWrite(LEFT_MOTOR_FORWARD, HIGH);
   digitalWrite(LEFT_MOTOR_BACKWARD, LOW);
   
+  
   // front gripper 
   pinMode(F_GRIPPER_1, OUTPUT);
   pinMode(F_GRIPPER_2, OUTPUT);
   
+  
   //Start LED
   pinMode(START_LED_PIN, OUTPUT);
+  
   
   //T-intersections
   pinMode(T_INT_1, INPUT);
@@ -350,22 +437,22 @@ void setupMotorshield()
   
   
   // communication pins
-  
   pinMode(UNO_PIN_BOTTOM_OUT, OUTPUT);
   pinMode(UNO_PIN_BOTTOM_IN, INPUT);
   digitalWrite(UNO_PIN_BOTTOM_OUT, LOW);
   
+  
   pinMode(UNO_PIN_TOP_OUT, OUTPUT);
   pinMode(UNO_PIN_TOP_IN, INPUT);
   digitalWrite(UNO_PIN_TOP_OUT, LOW);
+  
 }
 
 /************************** GET THE T-INTERSECTIONS ************************************************/
 
 void get_t_intersections()
-{
 
-  
+{
  
     tInt[0] = digitalRead(T_INT_1);
     Serial.print(tInt[0]);
@@ -393,19 +480,24 @@ void get_t_intersections()
 /*************************** AUTO-CALIBRATE *****************************************************************************/
 // This function auto calibrates the sensor without having to move all sensors over white and black.
 void auto_calibrate()
+
 {
+  
   // calibrate for 1 second. calibration values are passed to qtrrc.calibtratedMinimumOn/ qtrcc.calibratedMaximumOn
   for (int i = 0; i < 100; i++)
   {
     qtrrc.calibrate();
     delay(20);
   }
+  
   // initialize min and max calibration values
   int calMin = 2500;
   int calMax = 0;
+  
   // find the Min and Max values of the calibration
   for (int i = 0; i < NUM_SENSORS; i++)
   {
+    
     if (qtrrc.calibratedMinimumOn[i] < calMin) 
     {
       calMin = qtrrc.calibratedMinimumOn[i];
@@ -414,66 +506,93 @@ void auto_calibrate()
     {
       calMax = qtrrc.calibratedMaximumOn[i];
     }
+    
   }
+  
   // assign the min and max values to calibtration arrays
   for (unsigned char i = 0; i < NUM_SENSORS; i++)
   {
+    
     qtrrc.calibratedMinimumOn[i] = calMin;
     qtrrc.calibratedMaximumOn[i] = calMax;
+    
   }
+  
 }
 
 
 /*********************** START OF THE GAME ************************************************************************/    
 
 void start_course() 
+
 {
+  
   int currentRead =analogRead(PHOTORESISTOR_PIN);
+  
   while (currentRead < 20) 
   {
+    
     currentRead = analogRead(PHOTORESISTOR_PIN);
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print(currentRead);
     delay(20);
+    
   }
+  
   digitalWrite(START_LED_PIN, HIGH);
+  
   while (currentRead > 18) 
   {
+    
     currentRead = analogRead(PHOTORESISTOR_PIN);
     delay(20);
+    
   }
 
   drive_motor(RIGHT, FWD, BASE_SPEED);
   drive_motor(LEFT, FWD, BASE_SPEED);
   delay(900);
   stop_motors();
+  
 }
 
 /************************** DRIVE MOTORS **********************************************************************/
+
 // this function drives the motors: specify motor, direction, speed
 void drive_motor(boolean motor, boolean dir, int spd)
+
 {
+  
   if (motor == RIGHT_MOTOR)
   {
+    
     if (dir == FWD) //Right motor forward
     {
+      
       digitalWrite(RIGHT_MOTOR_FORWARD, HIGH);
       digitalWrite(RIGHT_MOTOR_BACKWARD, LOW);
       analogWrite(RIGHT_MOTOR_PWM, spd);                            // Send the new calculated motor speeds from the motor controller to the motors
       
     }
+    
     else if(dir == BWD)//Right motor backwards
     {
+      
       digitalWrite(RIGHT_MOTOR_FORWARD, LOW);
       digitalWrite(RIGHT_MOTOR_BACKWARD, HIGH);
       analogWrite(RIGHT_MOTOR_PWM, spd);                            // Send the new calculated motor speeds from the motor controller to the motors
+    
     }
+    
   }
+  
   else if(motor == LEFT_MOTOR)
   {
+    
     if (dir == FWD)//Left motor forwards
     {
+      
       digitalWrite(LEFT_MOTOR_FORWARD, HIGH);
       digitalWrite(LEFT_MOTOR_BACKWARD, LOW);
       analogWrite(LEFT_MOTOR_PWM, spd);                            // Send the new calculated motor speeds from the motor controller to the motors
@@ -483,77 +602,106 @@ void drive_motor(boolean motor, boolean dir, int spd)
     {
       digitalWrite(LEFT_MOTOR_FORWARD, LOW);
       digitalWrite(LEFT_MOTOR_BACKWARD, HIGH);
-      analogWrite(LEFT_MOTOR_PWM, spd);                            // Send the new calculated motor speeds from the motor controller to the motors
+      analogWrite(LEFT_MOTOR_PWM, spd);      // Send the new calculated motor speeds from the motor controller to the motors
+    
     }
+    
   }  
+  
 }
 
 /************************* STOP MOTORS ***************************************************************/
 // stop both motors
 void stop_motors()
 {
+  
   drive_motor(RIGHT_MOTOR, FWD, 0);
   drive_motor(LEFT_MOTOR, FWD, 0);
+  
 }
 
 /************************** RESET MOTOR SPEEDS ********************************************************************/
 // reset motor speeds
 void reset_motor_speeds()
 {
+  
   rightMotorSpeed = BASE_SPEED;
   leftMotorSpeed = BASE_SPEED;
+  
 }
 
 /************************** TURNS ********************************************************************/
 // initiate a turn: specify direction
 void turn(boolean dir)
+
 {
   
   lastTurn = dir;
+  
   if (dir == RIGHT)
   {
+    
     drive_motor(RIGHT_MOTOR, BWD, TURN_SPEED);
     drive_motor(LEFT_MOTOR, FWD, TURN_SPEED);
     
     turnIndicator.read(frontPollingValues);
+    
     while (frontPollingValues[1] < THRESHOLD_HIGH || frontPollingValues[0] < THRESHOLD_HIGH) 
     {
+      
       turnIndicator.read(frontPollingValues);
       delay(15);
+      
     }
     while (true)
     {
+      
       turnIndicator.read(frontPollingValues);
+      
       if (frontPollingValues[0] < THRESHOLD_LOW && frontPollingValues[1] < THRESHOLD_LOW)
       {
+        
         delay(5);           
         stop_motors();
         break;
+        
       }
+      
     }
+    
   }
   
   else if (dir == LEFT)
   {
+    
     drive_motor(RIGHT_MOTOR, FWD, TURN_SPEED);
     drive_motor(LEFT_MOTOR, BWD, TURN_SPEED);
     
     turnIndicator.read(frontPollingValues);
+    
     while (frontPollingValues[0] < THRESHOLD_HIGH || frontPollingValues[1] < THRESHOLD_HIGH) 
     {
+      
       turnIndicator.read(frontPollingValues);
       delay(15);
+      
     }
     while (true)
     {
+      
       turnIndicator.read(frontPollingValues);
+      
       if (frontPollingValues[0] < THRESHOLD_LOW && frontPollingValues[1] < THRESHOLD_LOW)
       {
+        
         delay(5);                      
         stop_motors();
         break;
+        
       }
+      
     }
+    
   }
  
   drive_motor(RIGHT_MOTOR, FWD, BASE_SPEED);
@@ -566,35 +714,48 @@ void turn(boolean dir)
 //function to follow line bwds after playing a game
 void follow_bwd(boolean dir)
 {
+  
   while (pollingValues[0] < THRESHOLD_HIGH || pollingValues[1] < THRESHOLD_HIGH)
   {
+    
     poll.read(pollingValues);
     
     drive_motor(RIGHT_MOTOR, BWD, BASE_SPEED);
     drive_motor(LEFT_MOTOR, BWD, BASE_SPEED);
+    
   }
+  
   reset_motor_speeds();
 
   while (true)
   {
+    
     poll.read(pollingValues);
+    
     if ((pollingValues[0] < THRESHOLD_LOW || pollingValues[1] < THRESHOLD_LOW))
     {
+      
       turnCount--;
        
       if (turnCount == 0)
       {
+        
         // reinitialize flags
         tIntersection = 0;
         gameTurn = 0;
         turn(!dir);
+        
       }
+      
       else 
-      {
-        turn(dir);
+      {        
+        turn(dir);       
       }
+      
       break;
+      
     }
+    
     int positioning = qtrrc.readLine(sensorValues,1,1);                       // Get calibrated readings along with the line position
     int error = positioning - 2500;                                           // Determine the error from the calculated position
 
@@ -611,6 +772,7 @@ void follow_bwd(boolean dir)
   
     drive_motor(RIGHT_MOTOR, BWD, rightMotorSpeed); 
     drive_motor(LEFT_MOTOR, BWD, leftMotorSpeed);    
+    
   }
 
 }
@@ -621,22 +783,29 @@ void follow_bwd(boolean dir)
 
 void front_gripper(int action)
 {
+  
   if(action == STOP)
   {
+    
     digitalWrite(F_GRIPPER_1, LOW);
     digitalWrite(F_GRIPPER_2, LOW);
+    
   }  
   
   else if(action == OPEN)
   {
+    
     digitalWrite(F_GRIPPER_1, LOW);
     digitalWrite(F_GRIPPER_2, HIGH);
+    
   }
   
   else if(action == CLOSE)
   {
+    
     digitalWrite(F_GRIPPER_1, HIGH);
     digitalWrite(F_GRIPPER_2, LOW);
+    
   }
   
   
@@ -647,6 +816,7 @@ void front_gripper(int action)
 // grip game
 void grip_game(int millisec)
 {
+  
   front_gripper(CLOSE);
   delay(millisec);
   
@@ -659,18 +829,21 @@ void grip_game(int millisec)
   
   stop_motors();
   
-  front_gripper(CLOSE);  
+  front_gripper(CLOSE); 
+  
 }
 
 // let go of game
 void ungrip_game()
 {
+  
   front_gripper(OPEN);
-  delay(200);
+  delay(50);
   
   drive_motor(RIGHT, BWD, 20); 
   drive_motor(LEFT, BWD, 20); 
   delay(1000);
+  
 }
 
 
@@ -678,6 +851,7 @@ void ungrip_game()
 
 void play_game(int gameCount) 
 {
+  
   switch(gameCount){
     case 1:
     {
@@ -705,43 +879,56 @@ void play_game(int gameCount)
     }
 
   }
+  
 }
 
 /********************* PLAY SIMON ************************************************************************/  
 
 void play_simon()
 { 
+  
+  // back up
   drive_motor(RIGHT, BWD, 30);
   drive_motor(LEFT, BWD, 30);
-  delay(1000);
-  turnIndicator.read(frontPollingValues);
+  delay(500);
+  
+  // start turning
   drive_motor(RIGHT, FWD, 50);
   drive_motor(LEFT, BWD, 50);
-  while (frontPollingValues[0] <= THRESHOLD_HIGH && frontPollingValues[1] <= THRESHOLD_HIGH) {
+  
+  turnIndicator.read(frontPollingValues);
+  
+  // pass initial white line
+  while (frontPollingValues[0] <= THRESHOLD_HIGH && frontPollingValues[1] <= THRESHOLD_HIGH) 
+  {
+    
     turnIndicator.read(frontPollingValues);
     delay(20);
+    
   }
+  
   turnIndicator.read(frontPollingValues);
+  
+  // wait for next white line
   while (frontPollingValues[0] >= THRESHOLD_LOW || frontPollingValues[1] >= THRESHOLD_LOW)
   {
     turnIndicator.read(frontPollingValues);
     delay(2);
   }
   
+  // approach game
   drive_motor(RIGHT, BWD, 30);
   drive_motor(LEFT, BWD, 30);
+  delay(1300);
   
-  
-  delay(1700);
   stop_motors();
   
-  
+  // grip game
   for (int i = 0; i < 80; i++) 
   {
     backGripper.write(i);
     delay(10);
   }
-  
   
   for (int i = 80; i > 50; i--) 
   {
@@ -755,12 +942,21 @@ void play_simon()
   delay(550);
   stop_motors();
   
-    for (int i = 50; i < 80; i++) 
+  for (int i = 50; i < 80; i++) 
   {
     backGripper.write(i);
     delay(10);
   }
-  delay(5000);
+  
+  // sent signal to UNO
+  digitalWrite(UNO_PIN_TOP_OUT, HIGH);
+  delay(1000);
+  digitalWrite(UNO_PIN_TOP_OUT, LOW);
+  
+  
+  // wait for Uno to finish
+  while (digitalRead(UNO_PIN_TOP_IN) == LOW)
+  {}
   
   for (int i = 80; i > 0; i--) 
   {
@@ -780,6 +976,7 @@ void play_simon()
     poll.read(pollingValues);
     delay(20);
   }
+  
   delay(100);
   
 }
@@ -796,6 +993,7 @@ void play_etch_a_sketch()
   digitalWrite(UNO_PIN_BOTTOM_OUT, HIGH);
   delay(1000);
   digitalWrite(UNO_PIN_BOTTOM_OUT, LOW);
+  
   // wait for Uno to finish
   while (digitalRead(UNO_PIN_BOTTOM_IN) == LOW)
   {}
@@ -808,6 +1006,7 @@ void play_etch_a_sketch()
  
 void play_rubiks_cube()
 {
+  
    // Grip the Game
   grip_game(5000);
   
@@ -815,6 +1014,7 @@ void play_rubiks_cube()
   digitalWrite(UNO_PIN_TOP_OUT, HIGH);
   delay(1000);
   digitalWrite(UNO_PIN_TOP_OUT, LOW);
+  
   // wait for Uno to finish
   while (digitalRead(UNO_PIN_TOP_IN) == LOW)
   {}
@@ -831,6 +1031,7 @@ void pick_up_card()
   digitalWrite(UNO_PIN_BOTTOM_OUT, HIGH);
   delay(1000);
   digitalWrite(UNO_PIN_BOTTOM_OUT, LOW);
+  
   // wait for Uno to finish
   while (digitalRead(UNO_PIN_BOTTOM_IN) == LOW)
   {}

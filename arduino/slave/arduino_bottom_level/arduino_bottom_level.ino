@@ -35,6 +35,7 @@ int drive_speed = 8;
 
 void setup() 
 {
+  
   pinMode(SIGNAL_IN, INPUT);
   pinMode(SIGNAL_OUT, OUTPUT);
   digitalWrite(SIGNAL_OUT, LOW);
@@ -49,11 +50,13 @@ void setup()
 
 void loop() 
 {
+  
   while  (digitalRead(SIGNAL_IN) != HIGH)
   {}                      //Do Nothing
   // play etch a sketch
   
   play_etch_a_sketch();
+  
   // signal completion of game
   finished();
   
@@ -66,9 +69,8 @@ void loop()
   finished();
   
   while  (true)
-  {
-   
-  }
+  {}
+  
 }
 
 /********************* FUNCTIONS  ************************************************************************/
@@ -78,15 +80,18 @@ void loop()
 
 void finished() 
 {
+  
   digitalWrite(SIGNAL_OUT, HIGH);
   delay(1000);
   digitalWrite(SIGNAL_OUT, LOW);
+  
 }
    
 /********************* PICK UP CARD  ************************************************************************/
 
 void pick_up_card()
 {    
+  
     arms.attach(PIN_ARMS);
     // lower arms    
     for (int i = ARMS_START; i >= ARMS_FINISH; i--)
@@ -109,12 +114,14 @@ void pick_up_card()
     }    
     
     arms.detach();
+    
 }
 
 /********************* PLAY ETCH A SKETCH  ************************************************************************/
    
 void play_etch_a_sketch()
 {
+  
     arms.attach(PIN_ARMS);
   
     leftKnob.attach(PIN_LEFT_KNOB);
@@ -127,7 +134,9 @@ void play_etch_a_sketch()
       arms.write(i);
       delay(15);
     }
-    delay(3000);
+    
+    delay(200);
+    
     //draw I
     draw_action(LEFT, 300);
     draw_action(UP, 850);  
@@ -160,6 +169,7 @@ void draw_action(int draw_dir, int seconds)
 
   switch(draw_dir)
   {
+    
   case 1:
     leftKnob.attach(PIN_LEFT_KNOB);
     leftKnob.write(null_speed + drive_speed);
@@ -183,23 +193,27 @@ void draw_action(int draw_dir, int seconds)
     rightKnob.write(null_speed - drive_speed);
     delay(seconds);
     rightKnob.detach();
+    
   }
+  
 }
 
 void draw_e()
 {
+  
       // draw E
     draw_action(UP, 800);
     draw_action(RIGHT, 400);
-    draw_action(DOWN, 250);
+    draw_action(DOWN, 190);
     draw_action(LEFT, 350);
-    draw_action(DOWN, 100);
+    draw_action(DOWN, 105);
     draw_action(RIGHT, 400);
-    draw_action(DOWN, 100);
+    draw_action(DOWN, 105);
     draw_action(LEFT, 350);
-    draw_action(DOWN, 100);
+    draw_action(DOWN, 105);
     draw_action(RIGHT, 400);
-    draw_action(DOWN, 100);
+    draw_action(DOWN, 105);
     draw_action(LEFT, 500);
     draw_action(RIGHT, 1000);
+    
 }

@@ -13,35 +13,43 @@
 #define RK_ARM_FINISH 50
 
 #define RK_TURN_START 3 
-#define RK_TURN_FINISH 103
+#define RK_TURN_FINISH 108
 
 // SIMON SAYS CONSTANTS
 
 // Analog pin assignments
-#define sensorRed 3    
-#define sensorGreen 1   
-#define sensorYellow 2 
-#define sensorBlue 4
+#define sensorRed 2    
+#define sensorGreen 4   
+#define sensorYellow 3 
+#define sensorBlue 1
+
+// digital pin assignments
+#define PIN_SS_ARM 3
+#define PIN_START_SERVO 6
+#define PIN_YELLOW_BLUE 9
+#define PIN_RED_GREEN 5
+
+// define SS plating servo angles
+#define SERVO_START_YELLOW_BLUE 103
+#define SERVO_START_RED_GREEN 88
+#define SERVO_START_MIDDLE 60
+#define TURN_ANGLE 53
+
+// define SS arm angles
+#define SS_ARM_START 165
+#define SS_ARM_FINISH 60
+
+// define photoresistor threshold values
+#define THRESHOLD_RED 350
+#define THRESHOLD_GREEN 255
+#define THRESHOLD_YELLOW 65
+#define THRESHOLD_BLUE 190
 
 // define color constants
 #define RED 2
 #define GREEN 4
 #define YELLOW 3
 #define BLUE 1
-
-#define PIN_SS_ARM 3
-
-#define PIN_START_SERVO 6
-#define PIN_YELLOW_BLUE 9
-#define PIN_RED_GREEN 5
-
-#define SERVO_START_YELLOW_BLUE 110
-#define SERVO_START_RED_GREEN 100
-#define SERVO_START_MIDDLE 30
-#define TURN_ANGLE 60
-
-#define SS_ARM_START 150
-#define SS_ARM_FINISH 60
 
 // COMMUNICATION
 #define SIGNAL_IN 12
@@ -86,6 +94,9 @@ int greenSetpoint = 0;
 int yellowSetpoint = 0;
 int blueSetpoint = 0;
 
+int lastPress = BLUE;
+int maximum = 0;
+
 
 void setup()
 {
@@ -105,6 +116,7 @@ void setup()
   servoStart.attach(PIN_START_SERVO);
   simonArm.attach(PIN_SS_ARM);
 
+
   //Servo Starting Angles  
   servoRedGreen.write(SERVO_START_RED_GREEN);              
   servoYellowBlue.write(SERVO_START_YELLOW_BLUE);
@@ -123,29 +135,28 @@ void setup()
   
   // attach RK servo
   rkArm.attach(PIN_RK_ARM);
-  rkArm.write(RK_ARM_START);
-  
   rkTurn.attach(PIN_RK_TURN);
+  rkArm.write(RK_ARM_START);
   rkTurn.write(RK_TURN_START);
   
 }
 
 void loop()
+
 {
 //  // wait for signal to play Simon Says
-//  while (digitalRead(SIGNAL_IN) != HIGH)
-//  {}
-//  
+  while (digitalRead(SIGNAL_IN) != HIGH)
+  {}
+  
   play_simon_says();
+  
   // signal finished with game
   finished();
   
   // wait for signal to play Rubiks Cube
   Serial.print(digitalRead(SIGNAL_IN));
   while (digitalRead(SIGNAL_IN) != HIGH)
-  {
-    Serial.println("NO SIGNAL");
-  }
+  {}
   
   play_rubiks_cube();
   // signal finished with game
@@ -153,6 +164,7 @@ void loop()
   
   while (true)
   {}
+  
 }
 
 
@@ -164,9 +176,11 @@ void loop()
 
 void finished() 
 {
+  
   digitalWrite(SIGNAL_OUT, HIGH);
   delay(1000);
   digitalWrite(SIGNAL_OUT, LOW);
+  
 }
 
 /********************* PLAY SIMON SAYS  ************************************************************************/
@@ -174,55 +188,30 @@ void finished()
 void play_simon_says()
 {
   
+  //lower arm
   for (int i = SS_ARM_START; i > SS_ARM_FINISH; i--)
   {
     simonArm.write(i);
     delay(15);
   }
+  
+  delay(200);
 
   //Determine the setpoint values
   Calibrate_Setpoints();
   
-  delay(200);
-  
   start_game();
-
   
-  pressedCount++;
+  delay(4500);
   
-  for (int i = 0; i < pressedCount; i++)
-  {    
-    press_button(pressedArray[i]);
-  }
+  press_button(lastPress); 
   
+  delay(4500);
   
-  for (int i = 0; i < 100; i++)  
-  {
-    read_sensors();
-    compare_brightness();
-    delay(10);
-  }
+  press_button(lastPress);
   
-  pressedCount++;
- 
-  for (int i = 0; i < pressedCount; i++)
-  {    
-    press_button(pressedArray[i]);
-  }
+  delay(4500);
   
-  for (int i = 0; i < 150; i++)  
-  {
-    read_sensors();
-    compare_brightness();
-    delay(10);
-  }     
-  
-  pressedCount++;  
-  
-  for (int i = 0; i < pressedCount; i++)
-  {    
-    press_button(pressedArray[i]);
-  }
   
   for (int i = SS_ARM_FINISH; i < SS_ARM_START; i++)
   {
@@ -234,35 +223,34 @@ void play_simon_says()
 /******************  SIMON HELPER FUNCTIONS   ***************************************************************************************************************/
 void compare_brightness()                                                    //Determine which color is the 1st illuminated
 {
-  int lastPress = 0;
   
-  if (brightnessRed > redSetpoint)                                                            //If Red sensor shows brightness > Red Setpoint
+  if (brightnessRed > redSetpoint && brightnessRed - redSetpoint > maximum)                                                            //If Red sensor shows brightness > Red Setpoint
   {
-    Serial.println("detected Red");
+    Serial.println("detected Red: " + String(brightnessRed - redSetpoint));
     lastPress = RED;
+    maximum = brightnessRed - redSetpoint;
   }
   
-  else if (brightnessGreen > greenSetpoint)                                                        //If Green sensor shows brightness > Green Setpoint
+  else if (brightnessGreen > greenSetpoint && brightnessGreen - greenSetpoint > maximum)                                                        //If Green sensor shows brightness > Green Setpoint
   {
-    Serial.println("detected Green");
-    lastPress = GREEN;                                                                              
+    Serial.println("detected Green: " + String(brightnessGreen - greenSetpoint));
+    lastPress = GREEN;     
+    maximum = brightnessGreen - greenSetpoint;    
   }
  
-  else if (brightnessYellow >yellowSetpoint)                                                       //If Yellow sensor shows brightness > Yellow Setpoint
+  else if (brightnessYellow >yellowSetpoint && brightnessYellow - yellowSetpoint > maximum)                                                       //If Yellow sensor shows brightness > Yellow Setpoint
   {
-    Serial.println("detected Yellow");
+    Serial.println("detected Yellow: " + String(brightnessYellow - yellowSetpoint));
     lastPress = YELLOW;
+    maximum = brightnessYellow - yellowSetpoint;
   }
 
-  else if (brightnessBlue > blueSetpoint)                                                          //If Blue sensor shows brightness > Blue Setpoint
+  else if (brightnessBlue > blueSetpoint && brightnessBlue - blueSetpoint > maximum)                                                          //If Blue sensor shows brightness > Blue Setpoint
   {
-    Serial.println("detected Blue");
+    Serial.println("detected Blue: " + String(brightnessBlue - blueSetpoint));
     lastPress = BLUE;
+    
   }
-  if (lastPress != 0) 
-  {
-     pressedArray[pressedCount] = lastPress;
-  }  
   
 }
 
@@ -271,20 +259,22 @@ int Calibrate_Setpoints()
 {
   int i;  //Counter
   
-  for (i=0; i < 5; i++)
+  int iterations = 20;
+  
+  for (i = 0; i < iterations; i++)
   {
     redSensor = redSensor + analogRead(sensorRed);
     blueSensor = blueSensor + analogRead(sensorBlue);
     greenSensor = greenSensor + analogRead(sensorGreen);
     yellowSensor = yellowSensor + analogRead(sensorYellow);
-    delay(200);                                                                                 //Increased delay to account for flash photography
+    delay(100);                                                                                 //Increased delay to account for flash photography
   }
 
-  //Average Readings and add a buffer of 30 to account for error
-  redSensor = redSensor/5 + 70;
-  blueSensor = blueSensor/5 + 70;
-  greenSensor = greenSensor/5 + 70;
-  yellowSensor = yellowSensor/5 + 70;  
+  // add threshold to account for errors
+  redSensor = redSensor/iterations + THRESHOLD_RED;
+  blueSensor = blueSensor/iterations + THRESHOLD_BLUE;
+  greenSensor = greenSensor/iterations + THRESHOLD_GREEN;
+  yellowSensor = yellowSensor/iterations + THRESHOLD_YELLOW;  
 
   //Assign Setpoint Values from averages
   redSetpoint = redSensor;                        
@@ -304,6 +294,7 @@ int Calibrate_Setpoints()
 //Take all sensor readings
 int read_sensors()
 {
+  
   brightnessRed = analogRead(sensorRed);                                                  
   brightnessGreen = analogRead(sensorGreen);
   brightnessYellow = analogRead(sensorYellow);
@@ -320,54 +311,67 @@ int read_sensors()
 //Press the appropriate button
 void press_button(int button)
 {
+  
   Serial.println(button);
+  
+  Serial.println("Red Sensor: " + String(brightnessRed)); 
+  Serial.println("Green Sensor: " + String(brightnessGreen));   
+  Serial.println("Yellow Sensor: " + String(brightnessYellow)); 
+  Serial.println("Blue Sensor: " + String(brightnessBlue)); 
+ 
   int pos;
   //Press Red
   if (button == RED)                                                                              
   {
+    
     Serial.println("________PRESSING RED NOW_________");
     for(pos = SERVO_START_RED_GREEN; pos >= SERVO_START_RED_GREEN - TURN_ANGLE ; pos -= 1)                                                    
     {
       servoRedGreen.write(pos);
-      delay(15);
+      delay(10);
     }
     for(pos = SERVO_START_RED_GREEN - TURN_ANGLE; pos <= SERVO_START_RED_GREEN; pos += 1)
     {
       servoRedGreen.write(pos);
-      delay(15);
+      delay(5);      
     }
+    
   }
 
   //Press Green
   if (button == GREEN)                                                                               
   {
+    
     Serial.println("________PRESSING GREEN NOW_________");
     for(pos = SERVO_START_RED_GREEN; pos <= SERVO_START_RED_GREEN + TURN_ANGLE; pos += 1)                                                    
     {
       servoRedGreen.write(pos);
-      delay(15);
+      delay(10);
     }
     for(pos = SERVO_START_RED_GREEN + TURN_ANGLE; pos >= SERVO_START_RED_GREEN; pos -= 1)
     {
       servoRedGreen.write(pos);
-      delay(15);
+      delay(5);   
     }
+    
   }
 
   //Press Yellow
   if (button == YELLOW)                                                                              
   {
+    
     Serial.println("________PRESSING YELLOW NOW_________");
     for(pos = SERVO_START_YELLOW_BLUE; pos >= SERVO_START_YELLOW_BLUE - TURN_ANGLE; pos -= 1)                                                     
     {
       servoYellowBlue.write(pos);
-      delay(15);
+      delay(10);
     }
     for(pos = SERVO_START_YELLOW_BLUE - TURN_ANGLE; pos <= SERVO_START_YELLOW_BLUE; pos += 1)
     {
       servoYellowBlue.write(pos);
-      delay(15);
+      delay(5);
     }
+    
   }
 
   //Press Blue
@@ -377,35 +381,40 @@ void press_button(int button)
     for(pos = SERVO_START_YELLOW_BLUE; pos <= SERVO_START_YELLOW_BLUE + TURN_ANGLE; pos += 1)                                                    
     {
       servoYellowBlue.write(pos);
-      delay(15);
+      delay(10);
     }
     for(pos = SERVO_START_YELLOW_BLUE + TURN_ANGLE; pos >= SERVO_START_YELLOW_BLUE; pos -= 1)
     {
       servoYellowBlue.write(pos);
-      delay(15);
+      delay(5);
     } 
+    
   }
+  
 }
 
 
 
 void start_game() 
 {
+  
     int pos;
-    for(pos = 30; pos <= 60; pos += 1)                                          //press Center Button to start game
+    
+    for(pos = SERVO_START_MIDDLE; pos <= SERVO_START_MIDDLE + 30; pos += 1)                                          //press Center Button to start game
     {
       servoStart.write(pos);
      
       delay(15);
     }
       
-    for(pos = 60; pos >= 30; pos -= 1)                                         //Release Start Button
+    for(pos = SERVO_START_MIDDLE + 30; pos >= SERVO_START_MIDDLE; pos -= 1)                                         //Release Start Button
     {
       read_sensors();
       compare_brightness();
       servoStart.write(pos);
-      delay(15);
+      delay(10);
     }
+    
 }
 
 
@@ -485,6 +494,5 @@ void play_rubiks_cube()
   }
   
   rkArm.detach();
-  
-  
+    
 }

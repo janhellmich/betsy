@@ -536,29 +536,76 @@ void start_course()
 
 {
   
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("SET THE T-INTS");  
+  
+  // calibration countdown
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Cal White in: 3");
+  
+  delay(1000);
+  
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Cal White in: 2");
+  
+  delay(1000);
+  
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Cal White in: 1");
+  
+  delay(1000);
+  
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Calibrating!");
+ 
+  int readWhite = analogRead(PHOTORESISTOR_PIN);
+  
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Cal White: " + String(readWhite));
+  
+  
+  
   int currentRead =analogRead(PHOTORESISTOR_PIN);
   
-  while (currentRead < 20) 
+  while (currentRead < 1.5* readWhite) 
   {
     
     currentRead = analogRead(PHOTORESISTOR_PIN);
+    
     lcd.clear();
     lcd.setCursor(0,0);
-    lcd.print(currentRead);
+    lcd.print("Cal White: " + String(readWhite));
+    lcd.setCursor(0,1);
+    lcd.print("Current: " + String(currentRead));
+    
     delay(20);
     
   }
   
   digitalWrite(START_LED_PIN, HIGH);
   
-  while (currentRead > 18) 
+  while (currentRead > 1.4 * readWhite) 
   {
     
     currentRead = analogRead(PHOTORESISTOR_PIN);
+    
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Cal White: " + String(readWhite));
+    lcd.setCursor(0,1);
+    lcd.print("Current: " + String(currentRead));
+    
     delay(20);
     
   }
-
+  
+  
   drive_motor(RIGHT, FWD, BASE_SPEED);
   drive_motor(LEFT, FWD, BASE_SPEED);
   delay(900);

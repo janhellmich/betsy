@@ -13,7 +13,7 @@
 #define RK_ARM_FINISH 50
 
 #define RK_TURN_START 3 
-#define RK_TURN_FINISH 108
+#define RK_TURN_FINISH 113
 
 // SIMON SAYS CONSTANTS
 
@@ -40,10 +40,10 @@
 #define SS_ARM_FINISH 60
 
 // define photoresistor threshold values
-#define THRESHOLD_RED 420
+#define THRESHOLD_RED 350
 #define THRESHOLD_GREEN 290
-#define THRESHOLD_YELLOW 110
-#define THRESHOLD_BLUE 180
+#define THRESHOLD_YELLOW 290
+#define THRESHOLD_BLUE 200
 
 // define color constants
 #define RED 2

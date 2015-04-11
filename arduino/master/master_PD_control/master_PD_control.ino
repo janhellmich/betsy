@@ -26,7 +26,7 @@
 #define START_LED_PIN 45
 
 //define photoresitor pin
-#define PHOTORESISTOR_PIN 0
+#define PHOTORESISTOR_PIN 15
 
 // T-intersection pins
 #define T_INT_1 10
@@ -120,19 +120,25 @@ void setup()
 //    backGripper.write(i);
 //    delay(15);
 //  }
+//  front_gripper(OPEN);
+//  delay(4000);
+//  front_gripper(OPEN);
+//  delay(3000);
 //  while (true) {}
   
   // DEBUG
-  if (digitalRead(T_INT_4))
-  {
-    start_course();
-  }
+  
+  
+  get_t_intersections();
+  
+  start_course();
+  
   
   auto_calibrate();   
  
   front_gripper(OPEN);
   
-  get_t_intersections();
+  
  
 }
 
@@ -173,7 +179,7 @@ void loop()
     turnIndicator.read(frontPollingValues);
     
     // define sensor reader variables
-    int FS = frontPollingValues[0] < frontPollingValues[1] ? frontPollingValues[0] : frontPollingValues[1];
+    int FS = frontPollingValues[0] > frontPollingValues[1] ? frontPollingValues[0] : frontPollingValues[1];
     int RS = pollingValues[1];
     int LS = pollingValues[0];
     
@@ -342,6 +348,9 @@ void loop()
           lcd.setCursor(0,0);
           lcd.print("finish line");
           
+          drive_motor(RIGHT, FWD, BASE_SPEED);
+          drive_motor(LEFT, FWD, BASE_SPEED);
+          delay(800);
           stop_motors();
           delay(10000);
           
@@ -373,7 +382,7 @@ void loop()
     lcd.setCursor(6,1);
     lcd.print(FS);
     stop_motors();
-    //delay(10000);
+    //delay(5000);
     
   }
   
@@ -481,7 +490,7 @@ void get_t_intersections()
     lcd.print(tInt[3]);
     Serial.print(tInt[3]);
     Serial.print('\n');
-    delay(500);
+    //delay(500);
   
   
 }
@@ -493,7 +502,7 @@ void auto_calibrate()
 {
   
   // calibrate for 1 second. calibration values are passed to qtrrc.calibtratedMinimumOn/ qtrcc.calibratedMaximumOn
-  for (int i = 0; i < 100; i++)
+  for (int i = 0; i < 30; i++)
   {
     qtrrc.calibrate();
     delay(20);
@@ -541,23 +550,6 @@ void start_course()
   lcd.print("SET THE T-INTS");  
   
   // calibration countdown
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("Cal White in: 3");
-  
-  delay(1000);
-  
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("Cal White in: 2");
-  
-  delay(1000);
-  
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("Cal White in: 1");
-  
-  delay(1000);
   
   lcd.clear();
   lcd.setCursor(0,0);
@@ -569,11 +561,18 @@ void start_course()
   lcd.setCursor(0,0);
   lcd.print("Cal White: " + String(readWhite));
   
+  int multiplier = 1.8;
   
-  
+  if (tInt[4] == HIGH)
+  {
+    multiplier = 1.2;
+  }
+   
   int currentRead =analogRead(PHOTORESISTOR_PIN);
   
-  while (currentRead < 1.5* readWhite) 
+  
+  
+  while (currentRead < 3 * readWhite) 
   {
     
     currentRead = analogRead(PHOTORESISTOR_PIN);
@@ -590,7 +589,7 @@ void start_course()
   
   digitalWrite(START_LED_PIN, HIGH);
   
-  while (currentRead > 1.4 * readWhite) 
+  while (currentRead > 2 * readWhite) 
   {
     
     currentRead = analogRead(PHOTORESISTOR_PIN);
@@ -604,11 +603,10 @@ void start_course()
     delay(20);
     
   }
-  
-  
+    
   drive_motor(RIGHT, FWD, BASE_SPEED);
   drive_motor(LEFT, FWD, BASE_SPEED);
-  delay(900);
+  delay(800);
   stop_motors();
   
 }
@@ -702,7 +700,7 @@ void turn(boolean dir)
     
     turnIndicator.read(frontPollingValues);
     
-    while (frontPollingValues[1] < THRESHOLD_HIGH || frontPollingValues[0] < THRESHOLD_HIGH) 
+    while (frontPollingValues[1] < THRESHOLD_HIGH && frontPollingValues[0] < THRESHOLD_HIGH) 
     {
       
       turnIndicator.read(frontPollingValues);
@@ -735,7 +733,7 @@ void turn(boolean dir)
     
     turnIndicator.read(frontPollingValues);
     
-    while (frontPollingValues[0] < THRESHOLD_HIGH || frontPollingValues[1] < THRESHOLD_HIGH) 
+    while (frontPollingValues[0] < THRESHOLD_HIGH && frontPollingValues[1] < THRESHOLD_HIGH) 
     {
       
       turnIndicator.read(frontPollingValues);
@@ -966,7 +964,7 @@ void play_simon()
   turnIndicator.read(frontPollingValues);
   
   // wait for next white line
-  while (frontPollingValues[0] >= THRESHOLD_LOW || frontPollingValues[1] >= THRESHOLD_LOW)
+  while (frontPollingValues[0] >= THRESHOLD_LOW && frontPollingValues[1] >= THRESHOLD_LOW)
   {
     turnIndicator.read(frontPollingValues);
     delay(2);

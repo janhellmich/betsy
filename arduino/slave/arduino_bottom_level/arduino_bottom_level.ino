@@ -29,7 +29,7 @@ int LEFT  = 3;
 // set null speed for both servos
 int null_speed = 90;
 // set drive speed for both motors
-int drive_speed = 8;
+int drive_speed = 12;
 
 
 
@@ -54,6 +54,7 @@ void loop()
   while  (digitalRead(SIGNAL_IN) != HIGH)
   {}                      //Do Nothing
   // play etch a sketch
+  
   
   play_etch_a_sketch();
   
@@ -94,12 +95,19 @@ void pick_up_card()
   
     arms.attach(PIN_ARMS);
     // lower arms    
-    for (int i = ARMS_START; i >= ARMS_FINISH; i--)
+    for (int i = ARMS_START; i >= ARMS_FINISH + 15; i-=2)
+    {
+      arms.write(i);
+      delay(15);
+    }
+    
+    for (int i = ARMS_FINISH + 15; i >= ARMS_FINISH; i--)
     {
       arms.write(i);
       delay(30);
     }
-    delay(1000);
+    
+    delay(500);
     //raise arms
     for (int i = ARMS_FINISH; i <= ARMS_FINISH + 15; i++)
     {
@@ -107,7 +115,7 @@ void pick_up_card()
       delay(50);
     }
     delay(1000);
-    for (int i = ARMS_FINISH + 15; i <= ARMS_START; i++)
+    for (int i = ARMS_FINISH + 15; i <= ARMS_START; i+=2)
     {
       arms.write(i);
       delay(15);
@@ -129,7 +137,15 @@ void play_etch_a_sketch()
     leftKnob.write(90);
     rightKnob.write(90);
 
-    for (int i = ARMS_START; i >= ARMS_FINISH; i--)
+    delay(1000);
+    
+    for (int i = ARMS_START; i >= ARMS_FINISH + 15; i-=2)
+    {
+      arms.write(i);
+      delay(15);
+    }
+    
+    for (int i =  ARMS_FINISH + 15; i >= ARMS_FINISH; i--)
     {
       arms.write(i);
       delay(15);
@@ -151,7 +167,19 @@ void play_etch_a_sketch()
     draw_e();
     
 
-    for (int i = ARMS_FINISH; i <= ARMS_START; i+=2)
+    for (int i = ARMS_FINISH; i <= ARMS_FINISH + 50; i+=3)
+    {
+      arms.write(i);
+      delay(15);
+    }
+    
+    for (int i = ARMS_FINISH + 50; i >= ARMS_FINISH + 20; i-=3)
+    {
+      arms.write(i);
+      delay(15);
+    }
+    
+    for (int i = ARMS_FINISH + 20; i <= ARMS_START; i+=3)
     {
       arms.write(i);
       delay(15);

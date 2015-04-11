@@ -13,7 +13,7 @@
 #define RK_ARM_FINISH 50
 
 #define RK_TURN_START 3 
-#define RK_TURN_FINISH 113
+#define RK_TURN_FINISH 130
 
 // SIMON SAYS CONSTANTS
 
@@ -42,8 +42,8 @@
 // define photoresistor threshold values
 #define THRESHOLD_RED 350
 #define THRESHOLD_GREEN 290
-#define THRESHOLD_YELLOW 290
-#define THRESHOLD_BLUE 200
+#define THRESHOLD_YELLOW 220
+#define THRESHOLD_BLUE 130
 
 // define color constants
 #define RED 2
@@ -210,8 +210,7 @@ void play_simon_says()
   
   press_button(lastPress);
   
-  delay(4500);
-  
+  delay(3500);
   
   for (int i = SS_ARM_FINISH; i < SS_ARM_START; i++)
   {
@@ -429,60 +428,60 @@ void play_rubiks_cube()
   
   
   //lower arm
-  for (int i = RK_ARM_START; i > RK_ARM_FINISH; i--)
+  for (int i = RK_ARM_START; i > RK_ARM_FINISH; i-=2)
   {
     rkArm.write(i);
     delay(15);
   }
   
   // turn row
-  for (int i = RK_TURN_START; i <= RK_TURN_FINISH; i++)
+  for (int i = RK_TURN_START; i <= RK_TURN_FINISH; i+=2)
   {
     rkTurn.write(i);
     delay(15);
   }
   
   // raise arm
-  for (int i = RK_ARM_FINISH; i < RK_ARM_FINISH + 20; i++)
+  for (int i = RK_ARM_FINISH; i < RK_ARM_FINISH + 20; i+=2)
   {
     rkArm.write(i);
     delay(15);
   }
   
   // turn back
-  for (int i = RK_TURN_FINISH; i >= RK_TURN_START; i--)
+  for (int i = RK_TURN_FINISH; i >= RK_TURN_START; i-=2)
   {
     rkTurn.write(i);
     delay(15);
   }
   
-  // lower arm
-  for (int i = RK_ARM_FINISH + 20; i > RK_ARM_FINISH; i--)
-  {
-    rkArm.write(i);
-    delay(15);
-  }
-  
-  // turn row
-  for (int i = RK_TURN_START; i <= RK_TURN_FINISH; i++)
-  {
-    rkTurn.write(i);
-    delay(15);
-  }
-  
-  // raise arm
-  for (int i = RK_ARM_FINISH; i < RK_ARM_FINISH + 20; i++)
-  {
-    rkArm.write(i);
-    delay(15);
-  }
-  
-  // turn back
-  for (int i = RK_TURN_FINISH; i >= RK_TURN_START; i--)
-  {
-    rkTurn.write(i);
-    delay(15);
-  }
+//  // lower arm
+//  for (int i = RK_ARM_FINISH + 20; i > RK_ARM_FINISH; i--)
+//  {
+//    rkArm.write(i);
+//    delay(15);
+//  }
+//  
+//  // turn row
+//  for (int i = RK_TURN_START; i <= RK_TURN_FINISH; i++)
+//  {
+//    rkTurn.write(i);
+//    delay(15);
+//  }
+//  
+//  // raise arm
+//  for (int i = RK_ARM_FINISH; i < RK_ARM_FINISH + 20; i++)
+//  {
+//    rkArm.write(i);
+//    delay(15);
+//  }
+//  
+//  // turn back
+//  for (int i = RK_TURN_FINISH; i >= RK_TURN_START; i--)
+//  {
+//    rkTurn.write(i);
+//    delay(15);
+//  }
   
   rkTurn.detach();
   

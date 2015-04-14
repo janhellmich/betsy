@@ -73,7 +73,7 @@ Servo simonArm;
 //Initialize variables
 
 int pressedCount = 0;
-int pressedArray [4] = {0};
+
 
 
 int redSensor = 0;
@@ -454,34 +454,6 @@ void play_rubiks_cube()
     rkTurn.write(i);
     delay(15);
   }
-  
-//  // lower arm
-//  for (int i = RK_ARM_FINISH + 20; i > RK_ARM_FINISH; i--)
-//  {
-//    rkArm.write(i);
-//    delay(15);
-//  }
-//  
-//  // turn row
-//  for (int i = RK_TURN_START; i <= RK_TURN_FINISH; i++)
-//  {
-//    rkTurn.write(i);
-//    delay(15);
-//  }
-//  
-//  // raise arm
-//  for (int i = RK_ARM_FINISH; i < RK_ARM_FINISH + 20; i++)
-//  {
-//    rkArm.write(i);
-//    delay(15);
-//  }
-//  
-//  // turn back
-//  for (int i = RK_TURN_FINISH; i >= RK_TURN_START; i--)
-//  {
-//    rkTurn.write(i);
-//    delay(15);
-//  }
   
   rkTurn.detach();
   

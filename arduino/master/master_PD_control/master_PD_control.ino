@@ -82,18 +82,12 @@ unsigned int pollingValues[NUM_POLLING_SENSORS];                                
 unsigned int frontPollingValues[NUM_TURNING_SENSORS];                                        // An array containing the sensor values for the 2 front polling sensors
 
 
-
-
 // debug lcd
 LiquidCrystal lcd(49, 51, 53, 52, 50, 48);
 
 
 Servo backGripper;
-
-
 int tInt [4];
-
-
 
 /********************  SETUP  ***************************************************************************************************************/
 
@@ -113,26 +107,10 @@ void setup()
   backGripper.attach(4);
   backGripper.write(0);
   
-  
-  //DEBUG for SIMON
-//  for (int i = 0; i < 80; i++)
-//  { 
-//    backGripper.write(i);
-//    delay(15);
-//  }
-//  front_gripper(OPEN);
-//  delay(4000);
-//  front_gripper(OPEN);
-//  delay(3000);
-//  while (true) {}
-  
-  // DEBUG
-  
-  
+
   get_t_intersections();
   
   start_course();
-  
   
   auto_calibrate();   
  
@@ -278,7 +256,6 @@ void loop()
        
        
        stop_motors();
-       //delay(1000);
        lastGameTurn = RIGHT;
        gameTurn = 1;
        turnCount = 1;
@@ -479,6 +456,10 @@ void get_t_intersections()
     tInt[2] = digitalRead(T_INT_3);
     Serial.print(tInt[2]);
     tInt[3] = digitalRead(T_INT_4);
+    Serial.print(tInt[3]);
+    Serial.print('\n');
+    
+    
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print(tInt[0]);
@@ -488,9 +469,8 @@ void get_t_intersections()
     lcd.print(tInt[2]);
     lcd.setCursor(6,0);
     lcd.print(tInt[3]);
-    Serial.print(tInt[3]);
-    Serial.print('\n');
-    //delay(500);
+
+    
   
   
 }
@@ -545,10 +525,6 @@ void start_course()
 
 {
   
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("SET THE T-INTS");  
-  
   // calibration countdown
   
   lcd.clear();
@@ -561,17 +537,10 @@ void start_course()
   lcd.setCursor(0,0);
   lcd.print("Cal White: " + String(readWhite));
   
-  int multiplier = 1.8;
-  
-  if (tInt[4] == HIGH)
-  {
-    multiplier = 1.2;
-  }
    
   int currentRead =analogRead(PHOTORESISTOR_PIN);
   
-  
-  
+   
   while (currentRead < 3 * readWhite) 
   {
     

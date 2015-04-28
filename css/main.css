@@ -440,3 +440,28 @@ tbody th {
   margin: -66px 0 22px 0;
   vertical-align: top
 }
+
+/*
+  ========================================
+  CONTACT
+  ========================================
+*/
+
+.contact-brannon {
+  text-align: center;
+  padding-top: 20px;
+  text-transform: uppercase;
+}
+
+.contact-info {
+  margin-top: 88px;
+  padding-bottom: 22px;
+  text-align: center;
+}
+
+.contact-info img {
+  border-radius: 50%;
+  height: 130px;
+  margin: -40px 0 22px 0;
+  vertical-align: top
+}

@@ -110,7 +110,19 @@ void setup()
 
   get_t_intersections();
   
-  start_course();
+  if (tInt[4]) {
+    
+    start_course();
+    
+  }
+  
+  else {
+    
+    drive_motor(RIGHT, FWD, BASE_SPEED);
+    drive_motor(LEFT, FWD, BASE_SPEED);
+    delay(800);
+    
+  }
   
   auto_calibrate();   
  
@@ -325,9 +337,9 @@ void loop()
           lcd.setCursor(0,0);
           lcd.print("finish line");
           
-          drive_motor(RIGHT, FWD, BASE_SPEED);
-          drive_motor(LEFT, FWD, BASE_SPEED);
-          delay(800);
+//          drive_motor(RIGHT, FWD, BASE_SPEED);
+//          drive_motor(LEFT, FWD, BASE_SPEED);
+//          delay(800);
           stop_motors();
           delay(10000);
           
@@ -541,7 +553,7 @@ void start_course()
   int currentRead =analogRead(PHOTORESISTOR_PIN);
   
    
-  while (currentRead < 3 * readWhite) 
+  while (currentRead < 2 * readWhite) 
   {
     
     currentRead = analogRead(PHOTORESISTOR_PIN);
@@ -558,7 +570,7 @@ void start_course()
   
   digitalWrite(START_LED_PIN, HIGH);
   
-  while (currentRead > 2 * readWhite) 
+  while (currentRead > 1.5 * readWhite) 
   {
     
     currentRead = analogRead(PHOTORESISTOR_PIN);
